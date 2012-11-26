@@ -1,0 +1,48 @@
+package com.galfarslair.util;
+
+import com.badlogic.gdx.Gdx;
+
+public final class Utils {
+	
+	@SuppressWarnings("serial")
+	public static class TerrainException extends Exception {
+		public TerrainException(String message) {
+			super(message);
+		}	
+	}
+	
+	private static final String LOG_TAG = "glTerrain";
+	
+	public static boolean isPow2(int x) {
+		return (x & -x) == x;
+	}
+	
+	public static int log2(int bits) 
+	{
+		int log = 0;
+	    if ((bits & 0xffff0000) != 0) { bits >>>= 16; log = 16; }
+	    if (bits >= 256) { bits >>>= 8; log += 8; }
+	    if (bits >= 16 ) { bits >>>= 4; log += 4; }
+	    if (bits >= 4  ) { bits >>>= 2; log += 2; }
+	    return log + (bits >>> 1);
+	}
+	
+	public static int pow2(int x) {
+		return (int)Math.pow(2, x);
+	}
+	
+	public static int sqr(int x) {
+		return x * x;
+	}
+	
+	public static void logInfo(String msg, Object... params) {
+		String logMsg = String.format(msg, params);
+		Gdx.app.log(LOG_TAG, logMsg);
+	}
+	
+	public static void logElapsed(String msg, long startTime) {
+		long elapsed = System.nanoTime() - startTime;
+		String logMsg = String.format(msg + " %,d ms", elapsed / 1000000);
+		Gdx.app.log(LOG_TAG, logMsg);
+	}
+}

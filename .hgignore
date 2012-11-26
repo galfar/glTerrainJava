@@ -1,0 +1,12 @@
+syntax:glob
+
+Data/Terrains/*
+
+glTerrain/bin/*
+glTerrainDesktop/bin/*
+glTerrainAndroid/bin/*
+glTerrainAndroid/gen/*
+
+# symlinks to Data folder
+glTerrainAndroid/assets/*
+glTerrainDesktop/data/*
