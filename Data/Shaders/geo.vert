@@ -1,3 +1,5 @@
+#define DRAW_EDGES
+
 attribute vec2 position;
 attribute float height;
 attribute vec3 baryAttribs;
@@ -9,15 +11,24 @@ uniform mat4 matProjView;
 
 varying vec2 groundTexCoords;
 varying vec2 detailTexCoords;
+#ifdef DRAW_EDGES
 varying vec3 baryCoords;
 varying vec2 nodeCoords;
+#endif
 
-void main() {    
+const float detailScale = 0.25;
+
+void main() {
+#ifdef DRAW_EDGES    
     baryCoords = baryAttribs;
     nodeCoords = position / nodeSize;
+#endif
+    
+    /*if (position.x == 0.0)
+      position.y += 1.0;*/
+
     vec3 pos = vec3(position.x + nodePos.x, position.y + nodePos.y, height);  
-    groundTexCoords = vec2(pos.x / terrainSize, pos.y / terrainSize);  
-    float detailScale = 0.25;
+    groundTexCoords = vec2(pos.x / terrainSize, pos.y / terrainSize);
     detailTexCoords = vec2(pos.x * detailScale, pos.y * detailScale);  
     gl_Position = matProjView * vec4(pos, 1.0);
 }

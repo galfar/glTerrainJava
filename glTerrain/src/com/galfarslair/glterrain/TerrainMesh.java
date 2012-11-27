@@ -7,6 +7,6 @@ import com.galfarslair.util.Utils.TerrainException;
 public interface TerrainMesh {
 	void build(Pixmap heightMap) throws TerrainException;
 	void update(PerspectiveCamera camera);
-	int getSize();
-	
+	int getSize();	
+	float getHeightAtPos(float x, float y);
 }

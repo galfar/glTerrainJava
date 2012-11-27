@@ -1,10 +1,15 @@
-attribute vec3 a_position;
+attribute vec3 position;
 
-uniform float u_size;
-uniform mat4 u_projectionView;
-varying vec2 v_texCoords;
+uniform float terrainSize;
+uniform mat4 matProjView;
+
+varying vec2 groundTexCoords;
+varying vec2 detailTexCoords;
+
+const float detailScale = 0.25;
 
 void main() {
-    v_texCoords = vec2(a_position.x / u_size, a_position.y / u_size);
-    gl_Position = u_projectionView * vec4(a_position, 1.0);
+    groundTexCoords = vec2(position.x / terrainSize, position.y / terrainSize);
+    detailTexCoords = vec2(position.x * detailScale, position.y * detailScale);
+    gl_Position = matProjView * vec4(position, 1.0);
 }

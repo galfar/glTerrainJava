@@ -24,31 +24,36 @@ import com.galfarslair.glterrain.soar.SoarRenderer;
 import com.galfarslair.util.Utils.TerrainException;
 
 public class TerrainRunner implements ApplicationListener {
+	
+	private enum TerrainMethod {
+		GeoMipMapping, BruteForce, SOAR
+	}
+	
+	private enum State {
+		MainMenu, SettingsMenu, TerrainBuild, TerrainRun 
+	}
+	
 	private final float fieldOfView = 45;
 	private final Color skyColor = new Color(0.5f, 0.625f, 0.75f, 1.0f);	
 	private final float observerHeight = 1.8f;
 	
+	private PerspectiveCamera camera;
 	private float cameraYaw = 135;
 	private float cameraPitch = -15;	
 	private final Vector3 cameraPos = new Vector3(0, 0, 60);
 	private final Vector3 cameraUp = new Vector3(0, 0, 1);
 		
-	private SoarMesh soarMesh;
-	private SoarRenderer soarRenderer;
-	
-	private PerspectiveCamera camera;
-	private FPSLogger fpsLogger;
-	private BitmapFont font;
-	private SpriteBatch batch;
+	private TerrainMethod method = TerrainMethod.GeoMipMapping;
+	private TerrainMesh terrainMesh;
+	private TerrainRenderer terrainRenderer;
 	
 	private Texture groundTexture;
 	private Texture detailTexture;
-			
-	private MipMapMesh geoMesh;
-	private MipMapRenderer geoRenderer;
 	
-	private TerrainMesh terrainMesh;
-	
+	private FPSLogger fpsLogger;
+	private BitmapFont font;
+	private SpriteBatch batch;
+		
 	private boolean isFlying = true;
 	
 	private boolean benchmarkMode;
@@ -66,29 +71,7 @@ public class TerrainRunner implements ApplicationListener {
 		fpsLogger = new FPSLogger();
 		font = new BitmapFont(Gdx.files.internal("data/Consolas15.fnt"), false);
 		batch = new SpriteBatch();
-		
-		soarMesh = new SoarMesh();
-		
-		//heightMap = new Pixmap(Gdx.files.internal("data/Volcanoes/Volcanoes1025.png"));
-		heightMap = new Pixmap(Gdx.files.internal("data/Terrains/Volcanoes/VolcanoesMini.png"));
-				
-		/*try {
-			soarMesh.build(heightMap);
-		} catch (TerrainException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-		
-		geoMesh = new MipMapMesh();
-		try {
-			geoMesh.build(heightMap);
-		} catch (TerrainException e) {		
-			e.printStackTrace();
-		}
-		
-		
-		heightMap.dispose();
-				
+						
 		Gdx.gl.glDisable(GL10.GL_LIGHTING);
 		Gdx.gl.glDisable(GL10.GL_BLEND);
 	    Gdx.gl.glEnable(GL10.GL_CULL_FACE);
@@ -107,26 +90,36 @@ public class TerrainRunner implements ApplicationListener {
 		detailTexture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.Linear);
 		detailTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
-	    soarRenderer = new SoarRenderer(Gdx.files.internal("data/Shaders/soar.vert"), Gdx.files.internal("data/Shaders/textured.frag"));
-	    /*try {
-			soarRenderer.assignMesh(soarMesh);
-		} catch (TerrainException e) {
-			e.printStackTrace();
-		}*/
+		
+	    switch (method) {
+	    case GeoMipMapping:
+	    	terrainMesh = new MipMapMesh();
+	    	terrainRenderer = new MipMapRenderer(Gdx.files.internal("data/Shaders/geo.vert"), Gdx.files.internal("data/Shaders/textured.frag"));
+	    	break;
+	    case BruteForce:
+	    	
+	    	break;
+	    case SOAR:
+	    	terrainMesh = new SoarMesh();
+	    	terrainRenderer = new SoarRenderer(Gdx.files.internal("data/Shaders/soar.vert"), Gdx.files.internal("data/Shaders/textured.frag"));
+	    	break;
+	    }
 	    
-	    geoRenderer = new MipMapRenderer(Gdx.files.internal("data/Shaders/geo.vert"), Gdx.files.internal("data/Shaders/textured.frag"));
+	    //heightMap = new Pixmap(Gdx.files.internal("data/Volcanoes/Volcanoes1025.png"));
+	    heightMap = new Pixmap(Gdx.files.internal("data/Terrains/Volcanoes/VolcanoesMini.png"));
+	  			    
 	    try {
-			geoRenderer.assignMesh(geoMesh);
+	    	terrainMesh.build(heightMap);
+		} catch (TerrainException e) {		
+			e.printStackTrace();
+		}
+	    heightMap.dispose();	    
+			    
+	    try {
+			terrainRenderer.assignMesh(terrainMesh);
 		} catch (TerrainException e) {
 			e.printStackTrace();
 		}
-	    
-	    terrainMesh = geoMesh;
-	}
-
-	@Override
-	public void dispose() {
-		
 	}
 
 	@Override
@@ -142,13 +135,11 @@ public class TerrainRunner implements ApplicationListener {
 		groundTexture.bind(0);
 		detailTexture.bind(1);
 		
-		//soarMesh.update(camera);
-		//soarRenderer.render(camera);
+		terrainMesh.update(camera);
+		terrainRenderer.render(camera);		
 		
-		geoMesh.update(camera);
-		geoRenderer.render(camera);
-			
-		font.getRegion().getTexture().bind(0);
+		Gdx.gl.glActiveTexture(GL10.GL_TEXTURE0); // Needs to be done for sprites & fonts to work (they bind to current tex unit)
+				
 		batch.begin();		
 		batch.enableBlending();		
 		font.draw(batch, "FPS: " + Gdx.graphics.getFramesPerSecond(), 5, Gdx.graphics.getHeight());
@@ -178,6 +169,15 @@ public class TerrainRunner implements ApplicationListener {
 
 	@Override
 	public void resume() {
+	}
+	
+	@Override
+	public void dispose() {		
+		terrainRenderer.dispose();
+		groundTexture.dispose();
+		detailTexture.dispose();
+		font.dispose();
+		batch.dispose();
 	}
 	
 	private void checkInput() {		

@@ -10,8 +10,10 @@ import com.badlogic.gdx.graphics.glutils.IndexBufferObject;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.VertexBufferObject;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ObjectMap;
+import com.badlogic.gdx.utils.ArrayMap.Values;
 import com.galfarslair.glterrain.TerrainMesh;
 import com.galfarslair.glterrain.TerrainRenderer;
 import com.galfarslair.glterrain.mipmap.MipMapMesh.Node;
@@ -24,7 +26,7 @@ public class MipMapRenderer implements TerrainRenderer {
 
 	private MipMapMesh mesh;	
 	private ObjectMap<MipMapMesh.Node, VertexBufferObject> heightBuffers;
-	private GeometryData geoData;	
+	private LeafGrid leafGrid;	
 	private ShaderProgram shader;
 	
 	public MipMapRenderer(FileHandle vertexShader, FileHandle fragmentShader) {
@@ -42,8 +44,8 @@ public class MipMapRenderer implements TerrainRenderer {
 	@Override
 	public void render(Camera camera) {
 		shader.begin();
-		geoData.vbo.bind(shader);
-		geoData.ibo.bind();
+		leafGrid.vbo.bind(shader);
+		leafGrid.ibo.bind();
 
 		shader.setUniformMatrix("matProjView", camera.combined);
 		shader.setUniformi("texGround", 0);
@@ -56,31 +58,39 @@ public class MipMapRenderer implements TerrainRenderer {
 			shader.setUniformf("nodePos", leaf.getX(), leaf.getY());
 			VertexBufferObject heights = heightBuffers.get(leaf);
 			heights.bind(shader);
-			Gdx.gl20.glDrawElements(GL20.GL_TRIANGLES, geoData.numIndices[lod],
-					GL20.GL_UNSIGNED_SHORT, geoData.indexOffsets[lod] * 2);
+			Gdx.gl20.glDrawElements(GL20.GL_TRIANGLES, leafGrid.numIndices[lod],
+					GL20.GL_UNSIGNED_SHORT, leafGrid.indexOffsets[lod] * 2);
 			heights.unbind(shader);
 		}
 
-		geoData.ibo.unbind();
-		geoData.vbo.unbind(shader);
+		leafGrid.ibo.unbind();
+		leafGrid.vbo.unbind(shader);
 		shader.end();
 	}
 	
+	@Override
+	public void dispose() {
+		leafGrid.dispose();
+		ObjectMap.Values<VertexBufferObject> vbos = heightBuffers.values();
+		while (vbos.hasNext()) {
+			vbos.next().dispose();
+		}			
+	}	
 	
 	private void buildData() {
-		geoData = new GeometryData(mesh.getLeafSize(), mesh.getLods());
+		leafGrid = new LeafGrid(mesh.getLeafSize(), mesh.getLods());
 		heightBuffers = new ObjectMap<MipMapMesh.Node, VertexBufferObject>();
 		mesh.visitQuadTreeLeaves(mesh.getRootNode(), new NodeAction() {
 			@Override
 			public void execute(Node node) {
-				VertexBufferObject vbo = new VertexBufferObject(true, geoData.numVertices, new VertexAttribute(Usage.Position, 1, "height"));
-				vbo.setVertices(node.getHeights(), 0, geoData.numVertices);
+				VertexBufferObject vbo = new VertexBufferObject(true, leafGrid.numVertices, new VertexAttribute(Usage.Position, 1, "height"));
+				vbo.setVertices(node.getHeights(), 0, leafGrid.numVertices);
 				heightBuffers.put(node, vbo);
 			}
 		});
 	}
 	
-	private static class GeometryData {
+	private static class LeafGrid implements Disposable {
 		int numVertices;		
 		int numVerticesPerLine;
 		int[] numIndices;
@@ -88,7 +98,7 @@ public class MipMapRenderer implements TerrainRenderer {
 		VertexBufferObject vbo;
 		IndexBufferObject ibo;
 		
-		public GeometryData(int leafSize, int lods) {
+		public LeafGrid(int leafSize, int lods) {
 			numVerticesPerLine = leafSize + 1;
 			numVertices = Utils.sqr(numVerticesPerLine);
 			buildVertexData();
@@ -165,6 +175,12 @@ public class MipMapRenderer implements TerrainRenderer {
 			assert indices.size == totalIndices;
 			ibo = new IndexBufferObject(totalIndices);
 			ibo.setIndices(indices.toArray(), 0, totalIndices);
+		}
+
+		@Override
+		public void dispose() {
+			vbo.dispose();
+			ibo.dispose();			
 		}
 	}
 

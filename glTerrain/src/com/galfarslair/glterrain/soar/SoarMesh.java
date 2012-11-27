@@ -54,7 +54,7 @@ public class SoarMesh implements TerrainMesh {
 		
 	public SoarMesh() {	
 		tolerancePixels = 4;
-		cullingEnabled = !true;				
+		cullingEnabled = true;				
 		forceFullRefinement = false;
 	}
 	
@@ -141,6 +141,13 @@ public class SoarMesh implements TerrainMesh {
 		subMeshRefineVisible(levels, indexer.triI, indexer.triJ, indexer.triK, mask);
 		triBuilder.stripEnd(indexer.indexSW(halfLevels));		
 	}
+
+	@Override
+	public float getHeightAtPos(float x, float y) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 	
 	private void subMeshRefineVisible(int level, int triI, int triJ, int triK, int mask) {
 		if (mask == SPHERE_VISIBLE) {
@@ -358,5 +365,5 @@ public class SoarMesh implements TerrainMesh {
 			triK = i;	
 		}		
 	}
-
+	
 }

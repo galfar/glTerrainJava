@@ -2,7 +2,6 @@ package com.galfarslair.glterrain.mipmap;
 
 import java.nio.ByteBuffer;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
@@ -23,14 +22,14 @@ public class MipMapMesh implements TerrainMesh {
 	public static final int CHILD_BOTTOM_LEFT  = 2;
 	public static final int CHILD_BOTTOM_RIGHT = 3;
 	
-	private static final int DEFAULT_LEAF_SIZE = 32;
+	private static final int DEFAULT_LEAF_SIZE = 8;
 	
 	private int size;
 	private int leafSize = DEFAULT_LEAF_SIZE;
 	private int leafCount;
 	private int levels;
 	private int lods;
-	private float tolerance = 4;
+	private float tolerance = 6;
 	private RootNode root;
 	private Array<Node> visibleLeaves;
 	
@@ -92,6 +91,12 @@ public class MipMapMesh implements TerrainMesh {
 				}
 			}
 		});
+	}
+
+	@Override
+	public float getHeightAtPos(float x, float y) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 	public interface NodeAction {
@@ -231,7 +236,5 @@ public class MipMapMesh implements TerrainMesh {
 			super(0, 0, size);
 		}
 	}
-
-
 	
 }
