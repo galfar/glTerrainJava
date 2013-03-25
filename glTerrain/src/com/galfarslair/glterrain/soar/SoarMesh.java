@@ -53,7 +53,7 @@ public class SoarMesh implements TerrainMesh {
 	private static final int SPHERE_VISIBLE = 127;
 		
 	public SoarMesh() {	
-		tolerancePixels = 4;
+		tolerancePixels = 3;
 		cullingEnabled = true;				
 		forceFullRefinement = false;
 	}
@@ -101,7 +101,7 @@ public class SoarMesh implements TerrainMesh {
 				int idx = y * size + x;
 				vertices[idx * 3 + 0] = x;
 				vertices[idx * 3 + 1] = y;
-				vertices[idx * 3 + 2] = (heightBuffer.get(idx) & 0xff) / 255.0f * size * 0.25f;				
+				vertices[idx * 3 + 2] = (heightBuffer.get(idx) & 0xff) / 255.0f * size * HEIGHT_SCALE;				
 			}			
 		}
 		

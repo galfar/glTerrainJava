@@ -23,10 +23,6 @@ void main() {
     baryCoords = baryAttribs;
     nodeCoords = position / nodeSize;
 #endif
-    
-    /*if (position.x == 0.0)
-      position.y += 1.0;*/
-
     vec3 pos = vec3(position.x + nodePos.x, position.y + nodePos.y, height);  
     groundTexCoords = vec2(pos.x / terrainSize, pos.y / terrainSize);
     detailTexCoords = vec2(pos.x * detailScale, pos.y * detailScale);  

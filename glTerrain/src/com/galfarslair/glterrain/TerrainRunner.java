@@ -2,8 +2,10 @@ package com.galfarslair.glterrain;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.Input.Peripheral;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL10;
@@ -21,6 +23,10 @@ import com.galfarslair.glterrain.mipmap.MipMapMesh;
 import com.galfarslair.glterrain.mipmap.MipMapRenderer;
 import com.galfarslair.glterrain.soar.SoarMesh;
 import com.galfarslair.glterrain.soar.SoarRenderer;
+import com.galfarslair.glterrain.ui.ScreenMainMenu;
+import com.galfarslair.glterrain.ui.UIScreen;
+import com.galfarslair.util.Utils;
+import com.galfarslair.util.FeatureSupport;
 import com.galfarslair.util.Utils.TerrainException;
 
 public class TerrainRunner implements ApplicationListener {
@@ -53,12 +59,20 @@ public class TerrainRunner implements ApplicationListener {
 	private FPSLogger fpsLogger;
 	private BitmapFont font;
 	private SpriteBatch batch;
+	private FeatureSupport wireframeSupport; 
+	
+	private UIScreen currentScreen;
+	private ScreenMainMenu screenMainMenu;
 		
 	private boolean isFlying = true;
 	
 	private boolean benchmarkMode;
 		
 	private Pixmap heightMap;
+	
+	public TerrainRunner(FeatureSupport wireframeSupport) {
+		this.wireframeSupport = wireframeSupport;
+	}
 	
 	@Override
 	public void create() {
@@ -71,6 +85,9 @@ public class TerrainRunner implements ApplicationListener {
 		fpsLogger = new FPSLogger();
 		font = new BitmapFont(Gdx.files.internal("data/Consolas15.fnt"), false);
 		batch = new SpriteBatch();
+		
+		UIScreen.initStatic();
+		screenMainMenu = new ScreenMainMenu();
 						
 		Gdx.gl.glDisable(GL10.GL_LIGHTING);
 		Gdx.gl.glDisable(GL10.GL_BLEND);
@@ -86,6 +103,7 @@ public class TerrainRunner implements ApplicationListener {
 		// Textures
 		groundTexture = new Texture(Gdx.files.internal("data/Terrains/Volcanoes/VolcanoesTX.jpg"), true);
 		groundTexture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.Linear);
+		//groundTexture.setWrap(TextureWrap.MirroredRepeat, TextureWrap.MirroredRepeat);
 		detailTexture = new Texture(Gdx.files.internal("data/Terrains/Detail.jpg"), true);
 		detailTexture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.Linear);
 		detailTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
@@ -94,7 +112,13 @@ public class TerrainRunner implements ApplicationListener {
 	    switch (method) {
 	    case GeoMipMapping:
 	    	terrainMesh = new MipMapMesh();
-	    	terrainRenderer = new MipMapRenderer(Gdx.files.internal("data/Shaders/geo.vert"), Gdx.files.internal("data/Shaders/textured.frag"));
+	    	
+	    	ShaderProgram shader = new ShaderProgram(Gdx.files.internal("data/Shaders/geo.vert"), Gdx.files.internal("data/Shaders/geo.frag"));		
+			Utils.logInfo(shader.getLog());
+			ShaderProgram shaderSkirt = new ShaderProgram(Gdx.files.internal("data/Shaders/geoSkirt.vert"), Gdx.files.internal("data/Shaders/geoSkirt.frag"));		
+			Utils.logInfo(shaderSkirt.getLog());
+	    	
+	    	terrainRenderer = new MipMapRenderer(shader, shaderSkirt);
 	    	break;
 	    case BruteForce:
 	    	
@@ -105,8 +129,8 @@ public class TerrainRunner implements ApplicationListener {
 	    	break;
 	    }
 	    
-	    //heightMap = new Pixmap(Gdx.files.internal("data/Volcanoes/Volcanoes1025.png"));
-	    heightMap = new Pixmap(Gdx.files.internal("data/Terrains/Volcanoes/VolcanoesMini.png"));
+	    heightMap = new Pixmap(Gdx.files.internal("data/Terrains/Volcanoes/Volcanoes1025.png"));
+	    //heightMap = new Pixmap(Gdx.files.internal("data/Terrains/Volcanoes/VolcanoesMini.png"));
 	  			    
 	    try {
 	    	terrainMesh.build(heightMap);
@@ -120,10 +144,21 @@ public class TerrainRunner implements ApplicationListener {
 		} catch (TerrainException e) {
 			e.printStackTrace();
 		}
+	    
+	    if (wireframeSupport != null) {
+	    	//wireframeSupport.enable();
+	    }
+	    
+	    currentScreen = screenMainMenu;	    
 	}
 
 	@Override
-	public void render() {	
+	public void render() {
+		/*if (currentScreen != null) {
+			currentScreen.render(Gdx.graphics.getDeltaTime());
+			return;
+		}*/
+		
 		checkInput();
 		
 		Gdx.gl.glClearColor(skyColor.r, skyColor.g, skyColor.b, 1);
@@ -142,8 +177,11 @@ public class TerrainRunner implements ApplicationListener {
 				
 		batch.begin();		
 		batch.enableBlending();		
-		font.draw(batch, "FPS: " + Gdx.graphics.getFramesPerSecond(), 5, Gdx.graphics.getHeight());
-		font.draw(batch, "Camera: " + cameraYaw + " " + cameraPitch, 5, Gdx.graphics.getHeight() - 20);
+		font.drawMultiLine(batch, 
+				"FPS: " + Gdx.graphics.getFramesPerSecond() + "\n" + 
+				String.format("CamPos: %.1f %.1f %.1f\n", camera.position.x, camera.position.y, camera.position.z) + 
+				String.format("CamDir: %.2f %.2f\n", cameraYaw, cameraPitch), 
+				5, Gdx.graphics.getHeight());
 		batch.end();
 		
 		fpsLogger.log();
@@ -151,6 +189,11 @@ public class TerrainRunner implements ApplicationListener {
 
 	@Override
 	public void resize(int width, int height) {		
+		/*if (currentScreen != null) {
+			currentScreen.resize(width, height);
+			return;
+		}*/
+		
 		Gdx.gl.glViewport(0, 0, width, height);
 		if (camera != null) {
 			cameraPos.set(camera.position);
@@ -172,7 +215,7 @@ public class TerrainRunner implements ApplicationListener {
 	}
 	
 	@Override
-	public void dispose() {		
+	public void dispose() {
 		terrainRenderer.dispose();
 		groundTexture.dispose();
 		detailTexture.dispose();
@@ -180,15 +223,18 @@ public class TerrainRunner implements ApplicationListener {
 		batch.dispose();
 	}
 	
-	private void checkInput() {		
-		
+	boolean hasKeyboard() {
+		return Gdx.input.isPeripheralAvailable(Peripheral.HardwareKeyboard); 
+	}
+	
+	boolean isShiftPressed() {
+		return Gdx.input.isKeyPressed(Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Keys.SHIFT_RIGHT);  
+	}
+	
+	private void checkInput() {
 		final float mouseLookSensitivity = 0.1f;
 		final float walkSpeed = 2f;		
-		final float superMove = 5f;
-		
-		if (Gdx.input.isKeyPressed(Keys.ESCAPE)) {
-			Gdx.app.exit();
-		}
+		final float superMove = 1/20f;
 		
 		int dx = Gdx.input.getDeltaX();
 		int dy = Gdx.input.getDeltaY();
@@ -197,12 +243,40 @@ public class TerrainRunner implements ApplicationListener {
 			updateCameraDirection(dx * mouseLookSensitivity, -dy * mouseLookSensitivity);
 		}		
 		
-		float speed = walkSpeed * Gdx.graphics.getDeltaTime();
-		if (Gdx.input.isKeyPressed(Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Keys.CONTROL_RIGHT)) {
-			speed = (terrainMesh.getSize() / superMove) * Gdx.graphics.getDeltaTime();
-		} 
+		float moveSpeed = 0;
+		float flySpeed = 0;
 		
-		camera.position.add(camera.direction.x * speed, camera.direction.y * speed, 0);
+		if (hasKeyboard()) {
+			if (Gdx.input.isKeyPressed(Keys.ESCAPE)) {
+				Gdx.app.exit();
+			}
+						
+			if (Gdx.input.isKeyPressed(Keys.UP)) {				
+				if (!isShiftPressed()) {
+					moveSpeed = walkSpeed;
+				} else {
+					flySpeed = walkSpeed;
+				}					
+			} else if (Gdx.input.isKeyPressed(Keys.DOWN)) {
+				if (!isShiftPressed()) {
+					moveSpeed = -walkSpeed;
+				} else {
+					flySpeed = -walkSpeed;
+				} 
+			}
+			
+			if (Gdx.input.isKeyPressed(Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Keys.CONTROL_RIGHT)) {
+				moveSpeed *= (terrainMesh.getSize() * superMove);
+				flySpeed *= (terrainMesh.getSize() * superMove);
+			}
+			
+			moveSpeed *= Gdx.graphics.getDeltaTime();
+			flySpeed *= Gdx.graphics.getDeltaTime();			
+		} else {
+			
+		}
+				
+		camera.position.add(camera.direction.x * moveSpeed, camera.direction.y * moveSpeed, camera.direction.z * moveSpeed);
 	}
 	
 	private void updateCameraDirection(float yawChange, float pitchChange) {

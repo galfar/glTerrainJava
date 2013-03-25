@@ -16,25 +16,25 @@ import com.galfarslair.util.Utils;
 import com.galfarslair.util.Utils.TerrainException;
 
 public class MipMapMesh implements TerrainMesh {
-
+	
 	public static final int CHILD_TOP_LEFT     = 0;
 	public static final int CHILD_TOP_RIGHT    = 1;
 	public static final int CHILD_BOTTOM_LEFT  = 2;
 	public static final int CHILD_BOTTOM_RIGHT = 3;
 	
-	private static final int DEFAULT_LEAF_SIZE = 8;
+	private static final int DEFAULT_LEAF_SIZE = 64;
 	
 	private int size;
 	private int leafSize = DEFAULT_LEAF_SIZE;
 	private int leafCount;
 	private int levels;
 	private int lods;
-	private float tolerance = 6;
+	private float tolerance = 4.0f;
 	private RootNode root;
 	private Array<Node> visibleLeaves;
 	
 	public MipMapMesh() {
-		
+		assert leafSize <= 128 : "Node won't fit in 16bit index buffer";
 	}
 	
 	@Override
@@ -73,7 +73,7 @@ public class MipMapMesh implements TerrainMesh {
 		ByteBuffer heightBuffer = heightMap.getPixels();
 		root.buildTree(heightBuffer, size, leafSize);
 		
-		visibleLeaves =  new Array<Node>(leafCount);		
+		visibleLeaves = new Array<Node>(leafCount);		
 	}
 
 	@Override
@@ -99,6 +99,27 @@ public class MipMapMesh implements TerrainMesh {
 		return 0;
 	}
 
+	private Node result;
+	
+	public Node getLeafAtPos(final float x, final float y) {
+		if (x < 0 || y < 0 || x > size || y > size) {
+			return null;
+		}
+		// TODO: smarter
+		result = null; 
+		
+		visitQuadTreeLeaves(root, new NodeAction() {			
+			@Override
+			public void execute(Node node) {
+				if ((x >= node.x) && (y >= node.y) && (x >= node.x) && (y >= node.y)) {
+					result = node;
+				}
+			}
+		});
+		
+		return result;
+	}
+	
 	public interface NodeAction {
 		void execute(MipMapMesh.Node node);
 	}
@@ -112,8 +133,8 @@ public class MipMapMesh implements TerrainMesh {
 			}
 		}
 	}
-	
-	public static class Node {		
+		
+	public class Node {		
 		private int size;		
 		private int x;
 		private int y;
@@ -150,6 +171,10 @@ public class MipMapMesh implements TerrainMesh {
 		public float[] getHeights() {
 			return heights;
 		}
+		
+		public BoundingBox getBounds() {
+			return bounds;
+		}
 				
 		protected void buildTree(ByteBuffer heightBuffer, int pitch, int leafSize) {
 			if (size > leafSize) {
@@ -172,7 +197,7 @@ public class MipMapMesh implements TerrainMesh {
 				for (int iy = 0; iy <= size; iy++) {
 					heightBuffer.position((y + iy) * pitch + x);
 					for (int ix = 0; ix <= size; ix++) {
-						float z = ((heightBuffer.get() & 0xff) - 128)/ 255.0f * 220 * 0.25f;
+						float z = ((heightBuffer.get() & 0xff) - 128)/ 255.0f * getSize() * HEIGHT_SCALE;
 						if (z < minZ) 
 							minZ = z;
 						if (z > maxZ) 
@@ -214,7 +239,8 @@ public class MipMapMesh implements TerrainMesh {
 				
 				bounds.min.set(x, y, minZ);
 				bounds.max.set(x + size, y + size, maxZ);
-				bounds.set(bounds.min, bounds.max);				
+				bounds.set(bounds.min, bounds.max);	
+				// Much faster to test bounding sphere that box 
 				radius = bounds.max.sub(bounds.getCenter()).len();
 			} 
 		}
@@ -231,7 +257,7 @@ public class MipMapMesh implements TerrainMesh {
 		}
 	}
 	
-	public static class RootNode extends Node {		
+	public class RootNode extends Node {		
 		public RootNode(int size) {			
 			super(0, 0, size);
 		}
