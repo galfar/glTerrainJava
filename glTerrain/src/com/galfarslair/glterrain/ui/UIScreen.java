@@ -25,7 +25,8 @@ public class UIScreen implements Screen {
 		root.setFillParent(true);
 		stage.addActor(root);
 		
-		root.debug();
+		//root.debug();
+				
 		Gdx.input.setInputProcessor(stage);
 	}
 	

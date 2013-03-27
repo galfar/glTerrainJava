@@ -25,8 +25,10 @@ public class Main {
 		LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
 		cfg.title = "glTerrain";
 		cfg.useGL20 = true;
-		cfg.width = 1280;
-		cfg.height = 1024;
+		cfg.width = 1400;
+		cfg.height = 1000;
+		/*cfg.width = 800;
+		cfg.height = 480;*/
 						
 		new LwjglApplication(new TerrainRunner(new WireframeSupport()), cfg);
 	}

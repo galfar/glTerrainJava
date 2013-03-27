@@ -8,7 +8,7 @@ public interface TerrainMesh {
 	final static float HEIGHT_SCALE = 0.15f;
 	
 	void build(Pixmap heightMap) throws TerrainException;
-	void update(PerspectiveCamera camera);
+	void update(PerspectiveCamera camera, float tolerance);
 	int getSize();	
 	float getHeightAtPos(float x, float y);
 }

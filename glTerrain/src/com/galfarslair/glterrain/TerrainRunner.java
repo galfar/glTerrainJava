@@ -6,6 +6,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.Input.Peripheral;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL10;
@@ -29,7 +30,7 @@ import com.galfarslair.util.Utils;
 import com.galfarslair.util.FeatureSupport;
 import com.galfarslair.util.Utils.TerrainException;
 
-public class TerrainRunner implements ApplicationListener {
+public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	
 	private enum TerrainMethod {
 		GeoMipMapping, BruteForce, SOAR
@@ -48,6 +49,7 @@ public class TerrainRunner implements ApplicationListener {
 	private float cameraPitch = -15;	
 	private final Vector3 cameraPos = new Vector3(0, 0, 60);
 	private final Vector3 cameraUp = new Vector3(0, 0, 1);
+	private float lodTolerance = 1.5f;
 		
 	private TerrainMethod method = TerrainMethod.GeoMipMapping;
 	private TerrainMesh terrainMesh;
@@ -63,12 +65,21 @@ public class TerrainRunner implements ApplicationListener {
 	
 	private UIScreen currentScreen;
 	private ScreenMainMenu screenMainMenu;
-		
-	private boolean isFlying = true;
 	
 	private boolean benchmarkMode;
+	private boolean autoWalk;
+	private boolean wireOverlay;
 		
 	private Pixmap heightMap;
+	
+	private final TerrainRunner instance = this;
+	
+	ShaderProgram mipmapShader;
+	ShaderProgram mipmapShaderWire;
+	
+	public interface TerrainStarter {
+		void start(boolean autoWalk, boolean wireOverlay, float tolerance);
+	}	
 	
 	public TerrainRunner(FeatureSupport wireframeSupport) {
 		this.wireframeSupport = wireframeSupport;
@@ -78,7 +89,7 @@ public class TerrainRunner implements ApplicationListener {
 	public void create() {
 		// useful for benchmark mode 
 		Gdx.graphics.setVSync(false);
-		Gdx.input.setCursorCatched(true);
+		//Gdx.input.setCursorCatched(true);
 		Gdx.app.setLogLevel(Application.LOG_DEBUG);
 		ShaderProgram.pedantic = false;
 				
@@ -87,7 +98,26 @@ public class TerrainRunner implements ApplicationListener {
 		batch = new SpriteBatch();
 		
 		UIScreen.initStatic();
-		screenMainMenu = new ScreenMainMenu();
+		screenMainMenu = new ScreenMainMenu(new TerrainStarter() {
+			@Override
+			public void start(boolean autoWalkEnabled, boolean wireOverlayEnabled, float tolerance) {
+				// TODO Auto-generated method stub
+				currentScreen = null;
+				
+				lodTolerance = tolerance;
+				autoWalk = autoWalkEnabled;
+				wireOverlay = wireOverlayEnabled;
+				
+				if (wireOverlay) {
+					((MipMapRenderer)terrainRenderer).setShader(mipmapShaderWire);
+				}
+				
+				Gdx.input.setCursorCatched(true);
+				resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+				
+				Gdx.input.setInputProcessor(instance);				
+			}
+		});
 						
 		Gdx.gl.glDisable(GL10.GL_LIGHTING);
 		Gdx.gl.glDisable(GL10.GL_BLEND);
@@ -113,12 +143,20 @@ public class TerrainRunner implements ApplicationListener {
 	    case GeoMipMapping:
 	    	terrainMesh = new MipMapMesh();
 	    	
-	    	ShaderProgram shader = new ShaderProgram(Gdx.files.internal("data/Shaders/geo.vert"), Gdx.files.internal("data/Shaders/geo.frag"));		
-			Utils.logInfo(shader.getLog());
+	    	String vert = Gdx.files.internal("data/Shaders/geo.vert").readString();
+	    	String frag = Gdx.files.internal("data/Shaders/geo.frag").readString();
+	    	mipmapShader = new ShaderProgram(vert, frag);
+	    	Utils.logInfo(mipmapShader.getLog());
+	    	
+	    	vert = "#define DRAW_EDGES\r\n" + vert;
+	    	frag = "#define DRAW_EDGES\r\n" + frag;
+	    	mipmapShaderWire = new ShaderProgram(vert, frag);
+	    	Utils.logInfo(mipmapShaderWire.getLog());
+	    		    	
 			ShaderProgram shaderSkirt = new ShaderProgram(Gdx.files.internal("data/Shaders/geoSkirt.vert"), Gdx.files.internal("data/Shaders/geoSkirt.frag"));		
 			Utils.logInfo(shaderSkirt.getLog());
 	    	
-	    	terrainRenderer = new MipMapRenderer(shader, shaderSkirt);
+	    	terrainRenderer = new MipMapRenderer(mipmapShader, shaderSkirt);
 	    	break;
 	    case BruteForce:
 	    	
@@ -154,10 +192,10 @@ public class TerrainRunner implements ApplicationListener {
 
 	@Override
 	public void render() {
-		/*if (currentScreen != null) {
+		if (currentScreen != null) {
 			currentScreen.render(Gdx.graphics.getDeltaTime());
 			return;
-		}*/
+		}
 		
 		checkInput();
 		
@@ -170,7 +208,7 @@ public class TerrainRunner implements ApplicationListener {
 		groundTexture.bind(0);
 		detailTexture.bind(1);
 		
-		terrainMesh.update(camera);
+		terrainMesh.update(camera, lodTolerance);
 		terrainRenderer.render(camera);		
 		
 		Gdx.gl.glActiveTexture(GL10.GL_TEXTURE0); // Needs to be done for sprites & fonts to work (they bind to current tex unit)
@@ -180,7 +218,8 @@ public class TerrainRunner implements ApplicationListener {
 		font.drawMultiLine(batch, 
 				"FPS: " + Gdx.graphics.getFramesPerSecond() + "\n" + 
 				String.format("CamPos: %.1f %.1f %.1f\n", camera.position.x, camera.position.y, camera.position.z) + 
-				String.format("CamDir: %.2f %.2f\n", cameraYaw, cameraPitch), 
+				String.format("CamDir: %.2f %.2f\n", cameraYaw, cameraPitch) + 
+				String.format("Tolerance: %.1fpx", lodTolerance),
 				5, Gdx.graphics.getHeight());
 		batch.end();
 		
@@ -189,10 +228,10 @@ public class TerrainRunner implements ApplicationListener {
 
 	@Override
 	public void resize(int width, int height) {		
-		/*if (currentScreen != null) {
+		if (currentScreen != null) {
 			currentScreen.resize(width, height);
 			return;
-		}*/
+		}
 		
 		Gdx.gl.glViewport(0, 0, width, height);
 		if (camera != null) {
@@ -231,9 +270,30 @@ public class TerrainRunner implements ApplicationListener {
 		return Gdx.input.isKeyPressed(Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Keys.SHIFT_RIGHT);  
 	}
 	
+	@Override
+	public boolean keyDown (int keycode) {
+		switch (keycode) {
+		case Keys.W: 
+			wireOverlay = !wireOverlay;
+			if (wireOverlay) {
+				((MipMapRenderer)terrainRenderer).setShader(mipmapShaderWire);
+			} else {
+				((MipMapRenderer)terrainRenderer).setShader(mipmapShader);
+			}
+			return true;
+		case Keys.PLUS:
+			lodTolerance = Math.min(lodTolerance + 0.5f, 15f);
+			return true;
+		case Keys.MINUS:
+			lodTolerance = Math.max(lodTolerance - 0.5f, 0.5f);
+			return true;		
+		}			
+		return false;
+	}
+	
 	private void checkInput() {
 		final float mouseLookSensitivity = 0.1f;
-		final float walkSpeed = 2f;		
+		final float walkSpeed = 4f;		
 		final float superMove = 1/20f;
 		
 		int dx = Gdx.input.getDeltaX();
@@ -244,7 +304,9 @@ public class TerrainRunner implements ApplicationListener {
 		}		
 		
 		float moveSpeed = 0;
-		float flySpeed = 0;
+		if (autoWalk) {
+			moveSpeed = terrainMesh.getSize() / 100.0f;
+		}
 		
 		if (hasKeyboard()) {
 			if (Gdx.input.isKeyPressed(Keys.ESCAPE)) {
@@ -255,27 +317,22 @@ public class TerrainRunner implements ApplicationListener {
 				if (!isShiftPressed()) {
 					moveSpeed = walkSpeed;
 				} else {
-					flySpeed = walkSpeed;
 				}					
 			} else if (Gdx.input.isKeyPressed(Keys.DOWN)) {
 				if (!isShiftPressed()) {
 					moveSpeed = -walkSpeed;
 				} else {
-					flySpeed = -walkSpeed;
 				} 
 			}
 			
 			if (Gdx.input.isKeyPressed(Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Keys.CONTROL_RIGHT)) {
 				moveSpeed *= (terrainMesh.getSize() * superMove);
-				flySpeed *= (terrainMesh.getSize() * superMove);
-			}
-			
-			moveSpeed *= Gdx.graphics.getDeltaTime();
-			flySpeed *= Gdx.graphics.getDeltaTime();			
+			}			
 		} else {
 			
 		}
-				
+		
+		moveSpeed *= Gdx.graphics.getDeltaTime();		
 		camera.position.add(camera.direction.x * moveSpeed, camera.direction.y * moveSpeed, camera.direction.z * moveSpeed);
 	}
 	

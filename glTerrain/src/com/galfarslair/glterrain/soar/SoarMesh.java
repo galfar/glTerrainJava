@@ -33,8 +33,7 @@ public class SoarMesh implements TerrainMesh {
 	private int numIndices;
 	private int numTriangles;	
 	private int size;
-	
-	private float tolerancePixels;
+		
 	private boolean cullingEnabled;
 	private boolean forceFullRefinement;
 	private int minLod;
@@ -52,8 +51,7 @@ public class SoarMesh implements TerrainMesh {
 	private static final int SPHERE_UNDECIDED = 64;
 	private static final int SPHERE_VISIBLE = 127;
 		
-	public SoarMesh() {	
-		tolerancePixels = 3;
+	public SoarMesh() {
 		cullingEnabled = true;				
 		forceFullRefinement = false;
 	}
@@ -114,10 +112,10 @@ public class SoarMesh implements TerrainMesh {
 	}
 	
 	@Override
-	public void update(PerspectiveCamera camera) {
+	public void update(PerspectiveCamera camera, float tolerance) {
 		viewPoint.set(camera.position);
 		clippingPlanes = camera.frustum.planes;	
-		kappa = (tolerancePixels / camera.viewportWidth) * (camera.fieldOfView * MathUtils.degreesToRadians);
+		kappa = (tolerance / camera.viewportWidth) * (camera.fieldOfView * MathUtils.degreesToRadians);
 		inverseKappa = kappa > 0.0f ? 1.0f / kappa : 1e06f;
 		int mask = cullingEnabled ? SPHERE_UNDECIDED : SPHERE_VISIBLE;
 		int levels = refinementLevels - 1;

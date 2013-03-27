@@ -29,7 +29,6 @@ public class MipMapMesh implements TerrainMesh {
 	private int leafCount;
 	private int levels;
 	private int lods;
-	private float tolerance = 4.0f;
 	private RootNode root;
 	private Array<Node> visibleLeaves;
 	
@@ -77,18 +76,17 @@ public class MipMapMesh implements TerrainMesh {
 	}
 
 	@Override
-	public void update(PerspectiveCamera camera) {
+	public void update(PerspectiveCamera camera, float tolerance) {
 		final PerspectiveCamera localCamera = camera;
 		final float perspectiveFactor = (float) (camera.viewportHeight / (2 * Math.tan(Math.PI / 4)));
+		final float localTolerance = tolerance;
 		visibleLeaves.clear();
 		
-		visitQuadTreeLeaves(root, new NodeAction() {
+		visitVisibleQuadTreeLeaves(root, localCamera, new NodeAction() {
 			@Override
 			public void execute(Node node) {
-				if (localCamera.frustum.sphereInFrustumWithoutNearFar(node.bounds.getCenter(), node.radius)) { 
-					visibleLeaves.add(node);					
-					node.determineLod(localCamera.position, perspectiveFactor, tolerance);					
-				}
+				visibleLeaves.add(node);					
+				node.determineLod(localCamera.position, perspectiveFactor, localTolerance);					
 			}
 		});
 	}
@@ -133,6 +131,19 @@ public class MipMapMesh implements TerrainMesh {
 			}
 		}
 	}
+	
+	public void visitVisibleQuadTreeLeaves(MipMapMesh.Node node, PerspectiveCamera camera, NodeAction action) {
+		if (!camera.frustum.sphereInFrustumWithoutNearFar(node.bounds.getCenter(), node.radius)) {
+			return;
+		}	
+		if (node.isLeaf()) {
+			action.execute(node);
+		} else {
+			for (Node child : node.children) {
+				visitVisibleQuadTreeLeaves(child, camera, action);
+			}
+		}
+	}
 		
 	public class Node {		
 		private int size;		
@@ -141,7 +152,7 @@ public class MipMapMesh implements TerrainMesh {
 		private int lods;
 		private int currentLod;
 		private Node[] children;
-		private final BoundingBox bounds = new BoundingBox();
+		private BoundingBox bounds = new BoundingBox();
 		private float[] heights;
 		private float errors[];	
 		private float radius;
@@ -177,6 +188,8 @@ public class MipMapMesh implements TerrainMesh {
 		}
 				
 		protected void buildTree(ByteBuffer heightBuffer, int pitch, int leafSize) {
+			float minZ = 1e06f, maxZ = -1e06f;
+			
 			if (size > leafSize) {
 				int halfSize = size / 2;			
 				children = new Node[4];
@@ -186,12 +199,18 @@ public class MipMapMesh implements TerrainMesh {
 				children[CHILD_BOTTOM_RIGHT] = new Node(x + halfSize, y + halfSize, halfSize);
 				for (Node child : children) {
 					child.buildTree(heightBuffer, pitch, leafSize);
+					
+					if (child.bounds.min.z < minZ) {
+						minZ = child.bounds.min.z;
+					}
+					if (child.bounds.max.z > maxZ) {
+						maxZ = child.bounds.max.z;
+					}
 				}
 			} else {
 				lods = log2(size) + 1;
 				int leafPitch = size + 1;
-				heights = new float[Utils.sqr(leafPitch)];
-				float minZ = 1e06f, maxZ = -1e06f;
+				heights = new float[Utils.sqr(leafPitch)];				
 				errors = new float[lods];	
 								
 				for (int iy = 0; iy <= size; iy++) {
@@ -235,14 +254,14 @@ public class MipMapMesh implements TerrainMesh {
 					
 					step *= 2;
 					errors[i] = maxError;
-				}				
-				
-				bounds.min.set(x, y, minZ);
-				bounds.max.set(x + size, y + size, maxZ);
-				bounds.set(bounds.min, bounds.max);	
-				// Much faster to test bounding sphere that box 
-				radius = bounds.max.sub(bounds.getCenter()).len();
+				}
 			} 
+			
+			bounds.min.set(x, y, minZ);
+			bounds.max.set(x + size, y + size, maxZ);
+			bounds.set(bounds.min, bounds.max);			
+			// Much faster to test bounding sphere that box 
+			radius = bounds.max.dst(bounds.getCenter());
 		}
 		
 		public void determineLod(Vector3 eyePos, float perspectiveFactor, float tolerance) {

@@ -1,6 +1,10 @@
 syntax:glob
 
+Dist/*
+Doc/*
+
 Data/Terrains/*
+Res/*
 
 glTerrain/bin/*
 glTerrainDesktop/bin/*

@@ -1,4 +1,4 @@
-#define DRAW_EDGES
+//#define DRAW_EDGES
 
 attribute vec2 position;
 attribute float height;

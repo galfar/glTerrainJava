@@ -37,6 +37,10 @@ public class MipMapRenderer implements TerrainRenderer {
 		this.shaderSkirt = shaderSkirt;
 	}
 	
+	public void setShader(ShaderProgram shader) {
+		this.shader = shader;
+	}
+	
 	@Override
 	public void assignMesh(TerrainMesh mesh) throws TerrainException {
 		assert mesh instanceof MipMapMesh;
