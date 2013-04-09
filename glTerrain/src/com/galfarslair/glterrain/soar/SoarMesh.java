@@ -1,22 +1,13 @@
 package com.galfarslair.glterrain.soar;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Pixmap.Format;
-import com.badlogic.gdx.math.Frustum;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.BufferUtils;
-import com.badlogic.gdx.utils.Pool;
 import com.galfarslair.glterrain.TerrainMesh;
+import com.galfarslair.util.HeightMap;
 import com.galfarslair.util.Utils;
 import com.galfarslair.util.Utils.TerrainException;
 
@@ -77,9 +68,9 @@ public class SoarMesh implements TerrainMesh {
 		return indices;
 	}
 	
-	public void build(Pixmap heightMap) throws TerrainException {
+	public void build(HeightMap heightMap) throws TerrainException {
 		size = heightMap.getWidth();
-		assert (heightMap.getFormat() == Format.Intensity) || (heightMap.getFormat() == Format.Alpha) : "Invalid pxel format of heightmap";
+		//assert (heightMap.getFormat() == Format.Intensity) || (heightMap.getFormat() == Format.Alpha) : "Invalid pxel format of heightmap";
 		assert size == heightMap.getHeight() : "Heightmap needs to be square";
 		assert Utils.isPow2(size - 1) : "Heightmap needs to be 2^n+1 pixels in size";
 		
@@ -92,14 +83,16 @@ public class SoarMesh implements TerrainMesh {
 		errors = new float[numVertices];
 		radii = new float[numVertices];
 		
-		ByteBuffer heightBuffer = heightMap.getPixels();		
+		ShortBuffer samples = heightMap.getSamples();		
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
 				int idx = y * size + x;
+				int height = samples.get() & 0xffff; 
+				float z = (height - 32768)/ 65535.0f * size * HEIGHT_SCALE;				
 				vertices[idx * 3 + 0] = x;
 				vertices[idx * 3 + 1] = y;
-				vertices[idx * 3 + 2] = (heightBuffer.get(idx) & 0xff) / 255.0f * size * HEIGHT_SCALE;				
+				vertices[idx * 3 + 2] = z;			
 			}			
 		}
 		
@@ -162,8 +155,7 @@ public class SoarMesh implements TerrainMesh {
 			if (refine) {
 				indexer.childR(triI, triJ, triK);				
 				subMeshRefineVisible(level - 1, indexer.triI, indexer.triJ, indexer.triK, mask);
-			}
-							
+			}							
 		}	
 	}
 	
@@ -235,8 +227,6 @@ public class SoarMesh implements TerrainMesh {
 				dj += di;
 			} while (--k > 0);
 		}	
-		
-		
 	}
 	
 	private int isSphereVisible(int idx, int mask) {

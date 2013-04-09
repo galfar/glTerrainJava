@@ -17,8 +17,7 @@ public final class Utils {
 		return (x & -x) == x;
 	}
 	
-	public static int log2(int bits) 
-	{
+	public static int log2(int bits) {
 		int log = 0;
 	    if ((bits & 0xffff0000) != 0) { bits >>>= 16; log = 16; }
 	    if (bits >= 256) { bits >>>= 8; log += 8; }

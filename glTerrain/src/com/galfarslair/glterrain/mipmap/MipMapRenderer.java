@@ -1,7 +1,11 @@
 package com.galfarslair.glterrain.mipmap;
 
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.GL11;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
@@ -10,6 +14,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.VertexBufferObject;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ObjectMap;
@@ -26,6 +31,7 @@ public class MipMapRenderer implements TerrainRenderer {
 	private MipMapMesh mesh;	
 	private ObjectMap<MipMapMesh.Node, VertexBufferObject> heightBuffers;
 	private ObjectMap<MipMapMesh.Node, VertexBufferObject> skirtHeightBuffers;
+	private ObjectMap<MipMapMesh.Node, Integer> shortBufferHandles;
 	private LeafGrid leafGrid;	
 	private ShaderProgram shader;
 	private ShaderProgram shaderSkirt;
@@ -65,7 +71,7 @@ public class MipMapRenderer implements TerrainRenderer {
 		shader.setUniformi("texDetail", 1);
 		shader.setUniformf("terrainSize", mesh.getSize());
 		shader.setUniformf("nodeSize", mesh.getLeafSize());
-		
+				
 		for (MipMapMesh.Node leaf : visibleLeaves) {
 			int lod = leaf.getCurrentLod();
 			shader.setUniformf("nodePos", leaf.getX(), leaf.getY());
@@ -73,7 +79,6 @@ public class MipMapRenderer implements TerrainRenderer {
 			heights.bind(shader);
 			Gdx.gl20.glDrawElements(GL20.GL_TRIANGLES, leafGrid.numIndices[lod],
 					GL20.GL_UNSIGNED_SHORT, leafGrid.indexOffsets[lod] * 2);
-			heights.unbind(shader);
 		}
 		
 		leafGrid.ibo.unbind();
@@ -118,6 +123,8 @@ public class MipMapRenderer implements TerrainRenderer {
 		leafGrid = new LeafGrid(mesh.getLeafSize(), mesh.getLods());
 		heightBuffers = new ObjectMap<MipMapMesh.Node, VertexBufferObject>();
 		skirtHeightBuffers = new ObjectMap<MipMapMesh.Node, VertexBufferObject>();
+		
+		shortBufferHandles = new ObjectMap<MipMapMesh.Node, Integer>();
 		
 		mesh.visitQuadTreeLeaves(mesh.getRootNode(), new NodeAction() {
 			@Override

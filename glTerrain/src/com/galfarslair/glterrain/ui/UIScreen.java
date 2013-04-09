@@ -2,21 +2,26 @@ package com.galfarslair.glterrain.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.galfarslair.util.Assets;
+import com.galfarslair.glterrain.util.Assets;
 
 public class UIScreen implements Screen {
 
 	protected static Skin skin;
+	public static BitmapFont consoleFont;
 	
 	protected Stage stage;
 	protected Table root;
 	
 	public static void initStatic() {
-		skin = new Skin(Assets.getFile("uiskin.json"));
+		skin = new Skin(Assets.getFile("uiSkin.json"));
+		consoleFont = new BitmapFont(Assets.getFile("Consolas15.fnt"), skin.getRegion("Consolas15"), false);
+		consoleFont.setColor(1f, 1f, 0.8f, 1f);
 	}
 	
 	public UIScreen() {

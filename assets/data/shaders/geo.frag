@@ -1,6 +1,14 @@
 //#define DRAW_EDGES
 
+#ifdef DRAW_EDGES
+#extension GL_OES_standard_derivatives : enable
+#endif
+
+
+#ifdef GL_ES
 precision mediump float;
+#endif
+
 
 uniform float nodeSize;
 uniform sampler2D texGround;
@@ -10,8 +18,6 @@ varying vec2 groundTexCoords;
 varying vec2 detailTexCoords;
 
 #ifdef DRAW_EDGES
-#extension GL_OES_standard_derivatives : enable
-
 varying vec3 baryCoords;
 varying vec2 nodeCoords;
 
@@ -36,8 +42,8 @@ float calcNodeEdgeFactor() {
 
 void main() {
     vec3 ground = texture2D(texGround, groundTexCoords).rgb;
-    float detail = clamp(texture2D(texDetail, detailTexCoords).a - 0.5, -0.1, 0.1);    
-    vec3 color = ground + vec3(detail);
+    vec3 detail = texture2D(texDetail, detailTexCoords).rgb - 0.5;    
+    vec3 color = ground + detail;
 
 #ifdef DRAW_EDGES    
     float triFactor = calcTriEdgeFactor();
@@ -51,5 +57,5 @@ void main() {
     color = color * clamp(nodeFactor + triFactor, 0.0, 1.0) + nodeEdgeColor + triEdgeColor;
 #endif
 
-    gl_FragColor.rgb = color;     
+    gl_FragColor.rgb = color; 
 }

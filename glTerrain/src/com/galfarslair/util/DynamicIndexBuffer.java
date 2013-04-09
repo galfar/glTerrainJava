@@ -37,7 +37,9 @@ public class DynamicIndexBuffer {
 	private int createBufferObject () {
 		gl.glGenBuffers(1, tmpHandle);
 		gl.glBindBuffer(GL20.GL_ELEMENT_ARRAY_BUFFER, tmpHandle.get(0));
-		gl.glBufferData(GL20.GL_ELEMENT_ARRAY_BUFFER, buffer.capacity() * 4, buffer, usage); // TODO: report this, can set empty buffer with data=null, LWJGL  backend wont call it!
+		// TODO: report this, can set empty buffer with data=null, LWJGL  backend wont call it!
+		// It's actually LWJGL's fault, it checks the buffer! 
+		gl.glBufferData(GL20.GL_ELEMENT_ARRAY_BUFFER, buffer.capacity() * 4, buffer, usage);  
 		gl.glBindBuffer(GL20.GL_ELEMENT_ARRAY_BUFFER, 0);		
 		return tmpHandle.get(0);
 	}

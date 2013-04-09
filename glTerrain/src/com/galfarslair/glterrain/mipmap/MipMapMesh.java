@@ -1,17 +1,14 @@
 package com.galfarslair.glterrain.mipmap;
 
-import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 
 import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
 import com.galfarslair.glterrain.TerrainMesh;
 import static com.galfarslair.util.Utils.log2;
-import static com.galfarslair.util.Utils.isPow2;
-
+import com.galfarslair.util.HeightMap;
 import com.galfarslair.util.Utils;
 import com.galfarslair.util.Utils.TerrainException;
 
@@ -58,19 +55,21 @@ public class MipMapMesh implements TerrainMesh {
 	}
 	
 	@Override
-	public void build(Pixmap heightMap) throws TerrainException {
+	public void build(HeightMap heightMap) throws TerrainException {
 		size = heightMap.getWidth();
-		assert (heightMap.getFormat() == Format.Intensity) || (heightMap.getFormat() == Format.Alpha) : "Invalid pxel format of heightmap";
-		assert size == heightMap.getHeight() : "Heightmap needs to be square";
-		assert isPow2(size - 1) : "Heightmap needs to be 2^n+1 pixels in size";
+		//assert (heightMap.getFormat() == Format.Intensity) || (heightMap.getFormat() == Format.Alpha) : "Invalid pxel format of heightmap";
+		//assert size == heightMap.getHeight() : "Heightmap needs to be square";
+		//assert isPow2(size - 1) : "Heightmap needs to be 2^n+1 pixels in size";
 				
 		levels = log2(size - 1) - log2(leafSize) + 1;
 		lods = log2(leafSize) + 1;
 		leafCount = (int)Math.pow(4, levels);
 		
-		root = new RootNode(size - 1);
-		ByteBuffer heightBuffer = heightMap.getPixels();
-		root.buildTree(heightBuffer, size, leafSize);
+		root = new RootNode(size - 1);		
+		
+		long time = System.nanoTime();
+		root.buildTree(heightMap, size, leafSize);
+		Utils.logElapsed("GeoMipMap mesh built in: ", time);
 		
 		visibleLeaves = new Array<Node>(leafCount);		
 	}
@@ -156,7 +155,7 @@ public class MipMapMesh implements TerrainMesh {
 		private float[] heights;
 		private float errors[];	
 		private float radius;
-				
+		
 		public Node(int x, int y, int size) {			
 			this.x = x;
 			this.y = y;
@@ -187,7 +186,7 @@ public class MipMapMesh implements TerrainMesh {
 			return bounds;
 		}
 				
-		protected void buildTree(ByteBuffer heightBuffer, int pitch, int leafSize) {
+		protected void buildTree(HeightMap heightMap, int pitch, int leafSize) {
 			float minZ = 1e06f, maxZ = -1e06f;
 			
 			if (size > leafSize) {
@@ -198,7 +197,7 @@ public class MipMapMesh implements TerrainMesh {
 				children[CHILD_BOTTOM_LEFT] = new Node(x, y + halfSize, halfSize);
 				children[CHILD_BOTTOM_RIGHT] = new Node(x + halfSize, y + halfSize, halfSize);
 				for (Node child : children) {
-					child.buildTree(heightBuffer, pitch, leafSize);
+					child.buildTree(heightMap, pitch, leafSize);
 					
 					if (child.bounds.min.z < minZ) {
 						minZ = child.bounds.min.z;
@@ -212,11 +211,14 @@ public class MipMapMesh implements TerrainMesh {
 				int leafPitch = size + 1;
 				heights = new float[Utils.sqr(leafPitch)];				
 				errors = new float[lods];	
+				
+				ShortBuffer samples = heightMap.getSamples();
 								
 				for (int iy = 0; iy <= size; iy++) {
-					heightBuffer.position((y + iy) * pitch + x);
+					samples.position((y + iy) * pitch + x);
 					for (int ix = 0; ix <= size; ix++) {
-						float z = ((heightBuffer.get() & 0xff) - 128)/ 255.0f * getSize() * HEIGHT_SCALE;
+						int height = samples.get() & 0xffff; 
+						float z = (height - 32768)/ 65535.0f * getSize() * HEIGHT_SCALE;
 						if (z < minZ) 
 							minZ = z;
 						if (z > maxZ) 

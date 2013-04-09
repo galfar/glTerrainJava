@@ -1,10 +1,8 @@
 package com.galfarslair.glterrain.ui;
 
-import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -14,13 +12,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.galfarslair.glterrain.TerrainRunner;
-import com.galfarslair.util.Assets;
+import com.galfarslair.glterrain.util.Assets;
+import com.galfarslair.util.SystemInfo;
 
 public class ScreenMainMenu extends UIScreen {
 
@@ -42,7 +40,7 @@ public class ScreenMainMenu extends UIScreen {
 		
 		final Label labTolerance = new Label("", skin);		
 		final Slider sliderTolerance = new Slider(0.5f, 15.0f, 0.5f, false, skin);		
-		sliderTolerance.setValue(1.5f);
+		sliderTolerance.setValue(2.0f);
 		sliderTolerance.addListener(new ChangeListener() {
 			public void changed (ChangeEvent event, Actor actor) {
 				labTolerance.setText(String.format("LOD tolerance in pixels: %.1f", sliderTolerance.getValue()));
@@ -51,7 +49,7 @@ public class ScreenMainMenu extends UIScreen {
 		
 		if (Gdx.app.getType() == ApplicationType.Android) {
 			checkAutowalk.setChecked(true);
-			sliderTolerance.setValue(3.0f);
+			sliderTolerance.setValue(4.0f);
 		}
 		labTolerance.setText(String.format("LOD tolerance in pixels: %.1f", sliderTolerance.getValue()));
 		
@@ -65,16 +63,18 @@ public class ScreenMainMenu extends UIScreen {
 		TextButton btnGLInfo = new TextButton("Show GL Info", skin);
 		btnGLInfo.addListener(new ChangeListener() {			
 			public void changed(ChangeEvent event, Actor actor) {
+				SystemInfo si = TerrainRunner.systemInfo;
+				
 				Dialog dlg = new Dialog("GL Info", skin);
-				dlg.setSize(400, 300);				
+				dlg.setSize(400, 360);				
 				
 				String info = 
-				    "Version: " + Gdx.gl.glGetString(GL10.GL_VERSION) + "\n" +   
-				    "Renderer: " + Gdx.gl.glGetString(GL10.GL_RENDERER) + "\n" +
-					"Resolution: " + String.format("%dx%d", Gdx.graphics.getWidth(), Gdx.graphics.getHeight()) + "\n" + 	  
-			      	"Extensions: ";
-				String exts = Gdx.gl.glGetString(GL10.GL_EXTENSIONS);
-				List list =	new List(exts.split(" "), skin, "small");
+				    "Version: " + si.getGLVersionString() + "\n" +   
+				    "Renderer: " + si.getGLRenderer() + "\n" +
+					"Resolution: " + String.format("%dx%d", si.getResolutionWidth(), si.getResolutionHeight()) + "\n" +
+					"Mem Info: " + String.format("%d/%d/%d", si.getJavaHeapMemory() / 1024, si.getNativeHeapMemory() / 1024, si.getMaxRuntimeMemory() / 1024) + "\n" +
+			      	"Extensions: ";				
+				List list =	new List(si.getGLExtensions().toArray(), skin, "small");
 				ScrollPane scrollPane = new ScrollPane(list, skin);
 				scrollPane.setScrollingDisabled(true, false);
 				scrollPane.setFadeScrollBars(false);
@@ -118,6 +118,8 @@ public class ScreenMainMenu extends UIScreen {
 		root.add(new Image(region));
 		root.add(controls).pad(8).fillY();
 		root.row();
+		
+		root.add(new Label("v" + TerrainRunner.VERSION, skin, "small")).colspan(2).right();		
 		
 		root.pack();
 	}
