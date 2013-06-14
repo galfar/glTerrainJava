@@ -35,6 +35,9 @@ public class AndroidTerrainStarter extends AndroidApplication {
     private static class AndroidPlatformSupport implements PlatformSupport {
 		@Override
 		public void enableWireframe() {
+		}
+		@Override
+		public void updateDisplay() {
 		}		
 	}
 

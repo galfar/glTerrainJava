@@ -56,7 +56,8 @@ public class ScreenMainMenu extends UIScreen {
 		TextButton btnStart = new TextButton("Start!", skin);
 		btnStart.addListener(new ChangeListener() {			
 			public void changed(ChangeEvent event, Actor actor) {
-				starter.start(checkAutowalk.isChecked(), checkWire.isChecked(), sliderTolerance.getValue());
+				starter.start(TerrainRunner.TerrainMethod.GeoMipMapping,
+						checkAutowalk.isChecked(), checkWire.isChecked(), sliderTolerance.getValue());
 			}
 		});
 		

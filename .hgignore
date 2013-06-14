@@ -12,5 +12,6 @@ glTerrainAndroid/bin/*
 glTerrainAndroid/gen/*
 
 # symlinks to Data folder
+assets/*
 glTerrainAndroid/assets/*
-glTerrainDesktop/data/*
+glTerrainDesktop/data*

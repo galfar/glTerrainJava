@@ -6,6 +6,7 @@ import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.Input.Peripheral;
 import com.badlogic.gdx.InputAdapter;
@@ -26,25 +27,27 @@ import com.galfarslair.glterrain.mipmap.MipMapMesh;
 import com.galfarslair.glterrain.mipmap.MipMapRenderer;
 import com.galfarslair.glterrain.soar.SoarMesh;
 import com.galfarslair.glterrain.soar.SoarRenderer;
+import com.galfarslair.glterrain.ui.ScreenBuilding;
 import com.galfarslair.glterrain.ui.ScreenMainMenu;
 import com.galfarslair.glterrain.ui.UIScreen;
 import com.galfarslair.glterrain.util.Assets;
 import com.galfarslair.glterrain.util.PlatformSupport;
 import com.galfarslair.util.HeightMap;
+import com.galfarslair.util.SequenceExecutor;
 import com.galfarslair.util.SystemInfo;
 import com.galfarslair.util.Utils;
 import com.galfarslair.util.Utils.TerrainException;
 
 public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	
-	public static final String VERSION = "0.24";
+	public static final String VERSION = "0.26";
 	
-	private enum TerrainMethod {
+	public enum TerrainMethod {
 		GeoMipMapping, BruteForce, SOAR
 	}
 	
 	private enum State {
-		MainMenu, SettingsMenu, TerrainBuild, TerrainRun 
+		MainMenu, SettingsMenu, TerrainPrepare, TerrainBuild, TerrainRun 
 	}
 	
 	private final float fieldOfView = 45;
@@ -60,7 +63,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	private final Vector3 cameraUp = new Vector3(0, 0, 1);
 	private float lodTolerance = 1.5f;
 		
-	private TerrainMethod method = /*TerrainMethod.SOAR;//*/TerrainMethod.GeoMipMapping;
+	private TerrainMethod terrainMethod = /*TerrainMethod.SOAR;//*/TerrainMethod.GeoMipMapping;
 	private TerrainMesh terrainMesh;
 	private TerrainRenderer terrainRenderer;
 	private FileHandle heightMapFile;
@@ -72,6 +75,8 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	private BitmapFont font;
 	private SpriteBatch batch;	
 	private long timer;
+	
+	private State state;	
 	
 	private UIScreen currentScreen;
 	private ScreenMainMenu screenMainMenu;
@@ -86,10 +91,12 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	ShaderProgram mipmapShader;
 	ShaderProgram mipmapShaderWire;
 	
+	private TerrainBuilder terrainBuilder;
+	
 	public static SystemInfo systemInfo = new SystemInfo();
 	
 	public interface TerrainStarter {
-		void start(boolean autoWalk, boolean wireOverlay, float tolerance);
+		void start(TerrainMethod method, boolean autoWalk, boolean wireOverlay, float tolerance);
 	}	
 	
 	public TerrainRunner(PlatformSupport platfromSupport) {
@@ -109,31 +116,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		UIScreen.initStatic();
 		fpsLogger = new FPSLogger();		
 		font = UIScreen.consoleFont;		
-		batch = new SpriteBatch();
-		
-		
-		screenMainMenu = new ScreenMainMenu(new TerrainStarter() {
-			@Override
-			public void start(boolean autoWalkEnabled, boolean wireOverlayEnabled, float tolerance) {
-				// TODO Auto-generated method stub
-				currentScreen = null;
-				
-				lodTolerance = tolerance;
-				autoWalk = autoWalkEnabled;
-				wireOverlay = wireOverlayEnabled;
-				
-				if (wireOverlay) {
-					((MipMapRenderer)terrainRenderer).setShader(mipmapShaderWire);
-				}
-				
-				capturedMouse = true;
-				Gdx.input.setCursorCatched(capturedMouse);				
-				
-				resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-				
-				Gdx.input.setInputProcessor(instance);				
-			}
-		});
+		batch = new SpriteBatch();		
 						
 		Gdx.gl.glDisable(GL10.GL_LIGHTING);
 		Gdx.gl.glDisable(GL10.GL_BLEND);
@@ -145,99 +128,49 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		Gdx.gl.glCullFace(GL10.GL_BACK);		
 		Gdx.gl.glDepthFunc(GL10.GL_LEQUAL);
 		Gdx.gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-		
-		// Textures
-		timer = System.nanoTime();
-					
-		String groundTexPath = null;
-		if (Gdx.app.getType() == ApplicationType.Desktop) {
-			groundTexPath = "terrains/NewVolcanoes-DXT1.ktx";
-		} else if (Gdx.app.getType() == ApplicationType.Android) {
-			groundTexPath = "terrains/NewVolcanoes-ETC1.ktx";
-		}		
-		
-		try {
-			groundTexture = Assets.loadKtxTexture(groundTexPath);
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();			
-		}  
-		Utils.logElapsed("Ground tex loaded in: ", timer);
-		groundTexture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.Linear);
-		
-		detailTexture = new Texture(Assets.getFile("terrains/Detail.jpg"), true);
-		detailTexture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.Linear);
-		detailTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
-		
-	    switch (method) {
-	    case GeoMipMapping:
-	    	terrainMesh = new MipMapMesh();
-	    	
-	    	String vert = Gdx.files.internal("data/shaders/geo.vert").readString();
-	    	String frag = Gdx.files.internal("data/shaders/geo.frag").readString();
-	    	mipmapShader = new ShaderProgram(vert, frag);
-	    	Utils.logInfo(mipmapShader.getLog());
-	    	
-	    	vert = "#define DRAW_EDGES\r\n" + vert;
-	    	frag = "#define DRAW_EDGES\r\n" + frag;
-	    	mipmapShaderWire = new ShaderProgram(vert, frag);
-	    	Utils.logInfo(mipmapShaderWire.getLog());
-	    		    	
-			ShaderProgram shaderSkirt = new ShaderProgram(Gdx.files.internal("data/shaders/geoSkirt.vert"), Gdx.files.internal("data/shaders/geoSkirt.frag"));		
-			Utils.logInfo(shaderSkirt.getLog());
-	    	
-	    	terrainRenderer = new MipMapRenderer(mipmapShader, shaderSkirt);
-	    	
-	    	heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF1k.hraw");	    	
-	    	break;
-	    case BruteForce:
-	    	
-	    	break;
-	    case SOAR:
-	    	terrainMesh = new SoarMesh();
-	    	terrainRenderer = new SoarRenderer(Gdx.files.internal("data/shaders/soar.vert"), Gdx.files.internal("data/shaders/geo.frag"));
-	    	heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF513.hraw");	    	
-	    	break;
-	    }
-	    
-	    //heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF8k.hraw");
-	    	    	    
-	    HeightMap heightMap = new HeightMap();
-	    try {
-			heightMap.loadFromRaw(heightMapFile);
-		} catch (HeightMap.HeightmapException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	   	  			    
-	    try {
-	    	terrainMesh.build(heightMap);
-		} catch (TerrainException e) {		
-			e.printStackTrace();
-		}
-	    //heightMap.dispose();	    
 			    
-	    try {
-			terrainRenderer.assignMesh(terrainMesh);
-		} catch (TerrainException e) {
-			e.printStackTrace();
-		}
+	    screenMainMenu = new ScreenMainMenu(new TerrainStarter() {
+			@Override
+			public void start(TerrainMethod method, boolean autoWalkEnabled, boolean wireOverlayEnabled, float tolerance) {				
+				terrainMethod = method;
+				lodTolerance = tolerance;
+				autoWalk = autoWalkEnabled;
+				wireOverlay = wireOverlayEnabled;
+				
+				setScreen(new ScreenBuilding());
+				terrainBuilder = new TerrainBuilder();
+				state = State.TerrainBuild;
+			}
+		});
 	    
-	    //platfromSupport.enableWireframe();
-	    scractchpad();
+	    state = State.MainMenu;
+	    setScreen(screenMainMenu);
 	    
-	    currentScreen = screenMainMenu;	    
+	    scratchpad();
 	}
 
-	private void scractchpad() {
+	private void scratchpad() {
+		//platfromSupport.enableWireframe();
+		
+	}
 	
+	public void setScreen(UIScreen screen) {
+		if (currentScreen != null) {
+			currentScreen.hide();
+		}
+		currentScreen = screen;		
+		if (currentScreen != null) {
+			currentScreen.show();
+			currentScreen.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		}
 	}
 	
 	@Override
 	public void render() {
+		if (state == State.TerrainBuild) {
+			terrainBuilder.execute();	
+		}
+		
 		if (currentScreen != null) {
 			currentScreen.render(Gdx.graphics.getDeltaTime());
 			return;
@@ -398,6 +331,134 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 				MathUtils.sinDeg(cameraPitch));		
 	}
 	
+	private enum TerrainBuildState {
+		Prepare, Textures, HeightMap, MeshGeo, MeshVisual, Finished
+	}
+	
+	private class TerrainBuilder extends SequenceExecutor<TerrainBuildState> {
+
+		private HeightMap heightMap;
+		
+		public TerrainBuilder() {
+			super(TerrainBuildState.class);
+		}
+
+		@Override
+		protected void processState() {
+			switch (current) {
+			case Prepare:
+				timer = System.nanoTime();
+				
+				// Terrain mesh & renderer 
+			    switch (terrainMethod) {
+			    case GeoMipMapping:
+			    	terrainMesh = new MipMapMesh();
+			    	
+			    	String vert = Gdx.files.internal("data/shaders/geo.vert").readString();
+			    	String frag = Gdx.files.internal("data/shaders/geo.frag").readString();
+			    	mipmapShader = new ShaderProgram(vert, frag);
+			    	Utils.logInfo(mipmapShader.getLog());
+			    	
+			    	vert = "#define DRAW_EDGES\r\n" + vert;
+			    	frag = "#define DRAW_EDGES\r\n" + frag;
+			    	mipmapShaderWire = new ShaderProgram(vert, frag);
+			    	Utils.logInfo(mipmapShaderWire.getLog());
+			    		    	
+					ShaderProgram shaderSkirt = new ShaderProgram(Gdx.files.internal("data/shaders/geoSkirt.vert"), Gdx.files.internal("data/shaders/geoSkirt.frag"));		
+					Utils.logInfo(shaderSkirt.getLog());
+			    	
+			    	terrainRenderer = new MipMapRenderer(mipmapShader, shaderSkirt);
+			    	
+			    	if (wireOverlay) {
+						((MipMapRenderer)terrainRenderer).setShader(mipmapShaderWire);
+					}					
+			    	
+			    	heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF1k.hraw");	    	
+			    	break;
+			    case BruteForce:
+			    	
+			    	break;
+			    case SOAR:
+			    	terrainMesh = new SoarMesh();
+			    	terrainRenderer = new SoarRenderer(Gdx.files.internal("data/shaders/soar.vert"), Gdx.files.internal("data/shaders/geo.frag"));
+			    	heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF513.hraw");	    	
+			    	break;
+			    }
+			    
+			    //heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF8k.hraw");				
+				return;
+				
+			case Textures:
+				String groundTexPath = null;
+				if (Gdx.app.getType() == ApplicationType.Desktop) {
+					groundTexPath = "terrains/NewVolcanoes-DXT1.ktx";
+				} else if (Gdx.app.getType() == ApplicationType.Android) {
+					groundTexPath = "terrains/NewVolcanoes-ETC1.ktx";
+				}		
+				
+				try {
+					groundTexture = Assets.loadKtxTexture(groundTexPath);
+				} catch (IOException e2) {
+					// TODO Auto-generated catch block
+					e2.printStackTrace();			
+				}  
+				Utils.logElapsed("Ground tex loaded in: ", timer);
+				groundTexture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.Linear);
+				
+				detailTexture = new Texture(Assets.getFile("terrains/Detail.jpg"), true);
+				detailTexture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.Linear);
+				detailTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+				return;
+				
+			case HeightMap:
+				heightMap = new HeightMap();
+			    try {
+					heightMap.loadFromRaw(heightMapFile);
+				} catch (HeightMap.HeightmapException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return;
+				
+			case MeshGeo:
+				try {
+			    	terrainMesh.build(heightMap);
+				} catch (TerrainException e) {		
+					e.printStackTrace();
+				}					    
+				return;
+				
+				
+			case MeshVisual:
+				try {
+					terrainRenderer.assignMesh(terrainMesh);
+				} catch (TerrainException e) {
+					e.printStackTrace();
+				}
+				
+				if (Utils.elapsedTimeMs(timer) < 1000) {
+					Utils.delay(500);
+				}
+				return;
+						
+			case Finished:
+				state = State.TerrainRun;
+			    setScreen(null);
+			    capturedMouse = true;
+				Gdx.input.setCursorCatched(capturedMouse);				
+				
+				// To build camera etc.
+				resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+				
+				Gdx.input.setInputProcessor(instance);
+				return;
+			}
+		}
+		
+	}
 	
 	
 }

@@ -12,6 +12,10 @@ import com.galfarslair.glterrain.util.Assets;
 
 public class UIScreen implements Screen {
 
+	public interface FinishedNotifier {
+		void onFinished();
+	}
+	
 	protected static Skin skin;
 	public static BitmapFont consoleFont;
 	
@@ -52,8 +56,6 @@ public class UIScreen implements Screen {
 
 	@Override
 	public void show() {
-		// TODO Auto-generated method stub
-
 	}
 	
 	@Override
@@ -70,8 +72,6 @@ public class UIScreen implements Screen {
 
 	@Override
 	public void dispose() {
-		// TODO Auto-generated method stub
-
 	}	
 
 }

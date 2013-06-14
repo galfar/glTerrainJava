@@ -1,5 +1,6 @@
 package com.galfarslair.glterrain;
 
+import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
@@ -21,9 +22,8 @@ public class DesktopTerrainStarter {
 		cfg.samples = 4;
 		cfg.width = 1400;
 		cfg.height = 1000;		
-		/*cfg.width = 800;
-		cfg.height = 480;*/
-		
+	    /*cfg.width = 800;
+		cfg.height = 480;*/		
 		
 		new LwjglApplication(new TerrainRunner(new DesktopPlatformSupport()), cfg);
 	}
@@ -39,6 +39,12 @@ public class DesktopTerrainStarter {
 			GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT, GL11.GL_NICEST);
 			GL11.glEnable(GL11.GL_BLEND);
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		}
+
+		@Override
+		public void updateDisplay() {
+			Display.update();
+			
 		}		
 	}
 
