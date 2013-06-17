@@ -32,6 +32,7 @@ import com.galfarslair.glterrain.ui.ScreenMainMenu;
 import com.galfarslair.glterrain.ui.UIScreen;
 import com.galfarslair.glterrain.util.Assets;
 import com.galfarslair.glterrain.util.PlatformSupport;
+import com.galfarslair.glterrain.util.Requirements;
 import com.galfarslair.util.HeightMap;
 import com.galfarslair.util.SequenceExecutor;
 import com.galfarslair.util.SystemInfo;
@@ -40,14 +41,14 @@ import com.galfarslair.util.Utils.TerrainException;
 
 public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	
-	public static final String VERSION = "0.26";
+	public static final String VERSION = "0.30";
 	
 	public enum TerrainMethod {
 		GeoMipMapping, BruteForce, SOAR
 	}
 	
 	private enum State {
-		MainMenu, SettingsMenu, TerrainPrepare, TerrainBuild, TerrainRun 
+		MainMenu, TerrainBuild, TerrainRun, SettingsMenu 
 	}
 	
 	private final float fieldOfView = 45;
@@ -75,6 +76,8 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	private BitmapFont font;
 	private SpriteBatch batch;	
 	private long timer;
+	private boolean capturedMouse;
+	private String methodName;
 	
 	private State state;	
 	
@@ -84,7 +87,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	private boolean benchmarkMode;
 	private boolean autoWalk;
 	private boolean wireOverlay;
-	private boolean capturedMouse;
+	
 	
 	private final TerrainRunner instance = this;
 	
@@ -94,6 +97,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	private TerrainBuilder terrainBuilder;
 	
 	public static SystemInfo systemInfo = new SystemInfo();
+	public static Requirements requirements = new Requirements(systemInfo);
 	
 	public interface TerrainStarter {
 		void start(TerrainMethod method, boolean autoWalk, boolean wireOverlay, float tolerance);
@@ -141,7 +145,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 				terrainBuilder = new TerrainBuilder();
 				state = State.TerrainBuild;
 			}
-		});
+		}, requirements);
 	    
 	    state = State.MainMenu;
 	    setScreen(screenMainMenu);
@@ -167,16 +171,23 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	
 	@Override
 	public void render() {
+		float deltaTime = Gdx.graphics.getDeltaTime();
+		
 		if (state == State.TerrainBuild) {
-			terrainBuilder.execute();	
+			terrainBuilder.execute();
 		}
 		
 		if (currentScreen != null) {
-			currentScreen.render(Gdx.graphics.getDeltaTime());
+			currentScreen.render(deltaTime);
 			return;
-		}
+		}		
+
+		if (deltaTime > 0.5) {
+			// Usually after terrain build there's big delay which could mess up with input timing etc.
+			deltaTime = 0;
+		}		
 		
-		checkInput();
+		checkInput(deltaTime);
 		
 		Gdx.gl.glClearColor(skyColor.r, skyColor.g, skyColor.b, 1);
 		Gdx.gl.glClearDepthf(1.0f);
@@ -200,6 +211,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 				String.format("CamDir: %.2f %.2f\n", cameraYaw, cameraPitch) + 
 				String.format("Tolerance: %.1fpx", lodTolerance),
 				5, Gdx.graphics.getHeight());
+		font.draw(batch, methodName, Gdx.graphics.getWidth() - font.getBounds(methodName).width, Gdx.graphics.getHeight());
 		batch.end();
 		
 		fpsLogger.log();
@@ -233,10 +245,12 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	}
 	
 	@Override
-	public void dispose() {
-		terrainRenderer.dispose();
-		groundTexture.dispose();
-		detailTexture.dispose();
+	public void dispose() {		
+		if (terrainRenderer != null) {
+			terrainRenderer.dispose();
+			groundTexture.dispose();
+			detailTexture.dispose();
+		}
 		font.dispose();
 		batch.dispose();
 	}
@@ -274,7 +288,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		return false;
 	}
 	
-	private void checkInput() {
+	private void checkInput(float deltaTime) {
 		final float mouseLookSensitivity = 0.1f;
 		final float walkSpeed = 4f;		
 		final float superMove = 1/20f;
@@ -315,7 +329,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 			
 		}
 		
-		moveSpeed *= Gdx.graphics.getDeltaTime();		
+		moveSpeed *= deltaTime;		
 		camera.position.add(camera.direction.x * moveSpeed, camera.direction.y * moveSpeed, camera.direction.z * moveSpeed);
 	}
 	
@@ -338,20 +352,23 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	private class TerrainBuilder extends SequenceExecutor<TerrainBuildState> {
 
 		private HeightMap heightMap;
+		private ScreenBuilding screen;
 		
 		public TerrainBuilder() {
 			super(TerrainBuildState.class);
+			screen = (ScreenBuilding)currentScreen;
 		}
 
 		@Override
 		protected void processState() {
+			timer = System.nanoTime();	
+			
 			switch (current) {
 			case Prepare:
-				timer = System.nanoTime();
-				
 				// Terrain mesh & renderer 
 			    switch (terrainMethod) {
 			    case GeoMipMapping:
+			    	methodName = "GeoMipMapping";
 			    	terrainMesh = new MipMapMesh();
 			    	
 			    	String vert = Gdx.files.internal("data/shaders/geo.vert").readString();
@@ -379,13 +396,15 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 			    	
 			    	break;
 			    case SOAR:
+			    	methodName = "SOAR";
 			    	terrainMesh = new SoarMesh();
 			    	terrainRenderer = new SoarRenderer(Gdx.files.internal("data/shaders/soar.vert"), Gdx.files.internal("data/shaders/geo.frag"));
 			    	heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF513.hraw");	    	
 			    	break;
 			    }
 			    
-			    //heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF8k.hraw");				
+			    //heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF8k.hraw");
+			    screen.addToLog(Utils.formatElapsed("Preparation:", timer));
 				return;
 				
 			case Textures:
@@ -408,6 +427,8 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 				detailTexture = new Texture(Assets.getFile("terrains/Detail.jpg"), true);
 				detailTexture.setFilter(TextureFilter.MipMapLinearLinear, TextureFilter.Linear);
 				detailTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+				
+				screen.addToLog(Utils.formatElapsed("Textures loaded:", timer));
 				return;
 				
 			case HeightMap:
@@ -421,6 +442,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+			    screen.addToLog(Utils.formatElapsed("Heightmap loaded:", timer));
 				return;
 				
 			case MeshGeo:
@@ -428,7 +450,8 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 			    	terrainMesh.build(heightMap);
 				} catch (TerrainException e) {		
 					e.printStackTrace();
-				}					    
+				}		
+				screen.addToLog(Utils.formatElapsed("Mesh built:", timer));
 				return;
 				
 				
@@ -439,9 +462,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 					e.printStackTrace();
 				}
 				
-				if (Utils.elapsedTimeMs(timer) < 1000) {
-					Utils.delay(500);
-				}
+				screen.addToLog(Utils.formatElapsed("GL buffers built:", timer));
 				return;
 						
 			case Finished:
@@ -454,6 +475,10 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 				resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 				
 				Gdx.input.setInputProcessor(instance);
+				
+				if (Utils.elapsedTimeMs(timer) < 1000) {
+					Utils.delay(2500);
+				}
 				return;
 			}
 		}

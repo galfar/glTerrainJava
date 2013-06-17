@@ -3,12 +3,10 @@ package com.galfarslair.glterrain.ui;
 import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.ButtonGroup;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
@@ -16,24 +14,25 @@ import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
 import com.galfarslair.glterrain.TerrainRunner;
-import com.galfarslair.glterrain.util.Assets;
+import com.galfarslair.glterrain.util.Requirements;
 import com.galfarslair.util.SystemInfo;
 
 public class ScreenMainMenu extends UIScreen {
 
-	//private Table container
-	//private TerrainRunner.TerrainStarter terrainStarter;
+	private TerrainRunner.TerrainStarter terrainStarter;
+	private Requirements requirements;
 	
-	public ScreenMainMenu(TerrainRunner.TerrainStarter terrainStarter) {
-		super();
-		final TerrainRunner.TerrainStarter starter = terrainStarter;
-						
-		Label label = new Label("glTerrain Demo", skin);
-		label.setFontScale(2);
+	public ScreenMainMenu(TerrainRunner.TerrainStarter terrainStarter, Requirements requirements) {		
+		super();		
+		this.terrainStarter = terrainStarter;
+		this.requirements = requirements;
+	}
 		
-		Texture texture = new Texture(Assets.getFile("Launcher.png"));
-		TextureRegion region = new TextureRegion(texture);
+	protected void defineControls() {
+		final TextButton btnGeoMip = new TextButton("GeoMipMapping", skin, "toggle");		
+		final TextButton btnSoar = new TextButton("SOAR", skin, "toggle");
 		
 		final CheckBox checkWire = new CheckBox("Wireframe overlay", skin);
 		final CheckBox checkAutowalk = new CheckBox("Autowalk (devices w/o HW keys)", skin);
@@ -56,7 +55,34 @@ public class ScreenMainMenu extends UIScreen {
 		TextButton btnStart = new TextButton("Start!", skin);
 		btnStart.addListener(new ChangeListener() {			
 			public void changed(ChangeEvent event, Actor actor) {
-				starter.start(TerrainRunner.TerrainMethod.GeoMipMapping,
+				TerrainRunner.TerrainMethod method = TerrainRunner.TerrainMethod.GeoMipMapping;
+				if (btnSoar.isChecked()) {
+					method = TerrainRunner.TerrainMethod.SOAR; 
+				}
+				
+				if ((method == TerrainRunner.TerrainMethod.SOAR) && !requirements.soarAvailable()) {					
+					showMessageDlg("Sorry, your GPU does not support all the features needed for running SOAR terrain rendering method.");
+					return;
+				}
+				
+				if ((method == TerrainRunner.TerrainMethod.GeoMipMapping) && checkWire.isChecked() && !requirements.wireframeOverlayAvailable()) {					
+					showMessageDlg("Sorry, your GPU does not support all the features needed for wireframe overlay.");
+					return;
+				}
+				
+				if (!requirements.memoryAvaiable()) {
+					showMessageDlg(String.format("Sorry, your device does not have enough RAM to run the terrain. " + 
+				        "At least %dMiB app limit is needed.", Requirements.REQUIRED_MEMORY_MB));
+					return;
+				}
+				
+				if (!requirements.textureSizeOk()) {
+					showMessageDlg(String.format("Sorry, your GPU does not support textures big enough for the terrain. " + 
+					        "Textures at least %1$dx%1$d in size are needed.", Requirements.REQUIRED_TEXTURE_SIZE));
+				    return;
+				}
+				
+				terrainStarter.start(method,
 						checkAutowalk.isChecked(), checkWire.isChecked(), sliderTolerance.getValue());
 			}
 		});
@@ -92,14 +118,31 @@ public class ScreenMainMenu extends UIScreen {
 			}
 		});
 		
-		Table controls = new Table();
-		//controls.debug();
+		btnSoar.addListener(new ChangeListener() {
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				checkWire.setVisible(!btnSoar.isChecked());
+			}
+		});
 		
-		controls.add(label).fillX();
-		controls.row();
-		
+		ButtonGroup btnGroupMethod = new ButtonGroup(btnGeoMip, btnSoar);		
+		btnGeoMip.setChecked(true);
+				
 		controls.add().expandY();
 		controls.row();
+		
+		Table group = new Table();		
+		group.debug();
+		
+		group.defaults().space(8).minWidth(160);		
+		group.add(btnGeoMip).left();
+		group.add(btnSoar).right();
+		group.row();
+		
+						
+		controls.add(group).left();		
+		controls.row();
+		
 		controls.add(checkWire).left();
 		controls.row();
 		controls.add(labTolerance).left();
@@ -114,57 +157,12 @@ public class ScreenMainMenu extends UIScreen {
 		controls.row();
 								
 		controls.add(btnStart).colspan(2).minHeight(60).fillX();
-		controls.row();
-		
-		root.add(new Image(region));
-		root.add(controls).pad(8).fillY();
-		root.row();
-		
-		root.add(new Label("v" + TerrainRunner.VERSION, skin, "small")).colspan(2).right();		
-		
-		root.pack();
+		controls.row();		
 	}
 	
 	@Override
 	public void render(float delta) {
 		super.render(delta);
-
-	}
-
-	@Override
-	public void resize(int width, int height) {
-		stage.setViewport(width, height, false);
-
-	}
-
-	@Override
-	public void show() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void hide() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void pause() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void resume() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void dispose() {
-		// TODO Auto-generated method stub
-
 	}
 
 }

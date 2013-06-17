@@ -16,9 +16,14 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Shaders</name>
+			<name>Data</name>
 			<type>2</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Data/Shaders</locationURI>
+		</link>
+		<link>
+			<name>Data/shaders</name>
+			<type>2</type>
+			<location>D:/Projects/Tests/glTerrainJava/assets/data/shaders</location>
 		</link>
 	</linkedResources>
 </projectDescription>

@@ -1,3 +1,5 @@
+#extension GL_OES_element_index_uint : enable
+
 attribute vec3 position;
 
 uniform float terrainSize;

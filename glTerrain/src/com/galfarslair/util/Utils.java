@@ -43,9 +43,13 @@ public final class Utils {
 		return (System.nanoTime() - startTime) / 1000000;		
 	}
 	
-	public static void logElapsed(String msg, long startTime) {
+	public static String formatElapsed(String msg, long startTime) {
 		long elapsed = elapsedTimeMs(startTime);
-		String logMsg = String.format(msg + " %,d ms", elapsed);
+		return String.format(msg + " %,d ms", elapsed);
+	}
+	
+	public static void logElapsed(String msg, long startTime) {		
+		String logMsg = formatElapsed(msg, startTime);
 		Gdx.app.log(LOG_TAG, logMsg);
 	}
 	

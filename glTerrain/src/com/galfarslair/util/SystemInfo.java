@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.GLCommon;
 import com.badlogic.gdx.utils.BufferUtils;
@@ -73,6 +74,10 @@ public class SystemInfo {
 		return maxTextureSize;
 	}
 	
+	public boolean hasDesktopGpu() {
+		return (Gdx.app.getType() == ApplicationType.Desktop) || (Gdx.app.getType() == ApplicationType.Applet);
+	}
+	
 	public void gather() {
 		GLCommon gl = Gdx.gl;
 		
@@ -88,8 +93,7 @@ public class SystemInfo {
 	    glExtensions.clear();
 	    for (String e : exts) {
 	    	glExtensions.add(e);
-	    }
-		
+	    }		
 		maxTextureSize = getGLInteger(GL10.GL_MAX_TEXTURE_SIZE);
 	}
 	
@@ -98,7 +102,6 @@ public class SystemInfo {
 		Gdx.gl.glGetIntegerv(pname, buff);
 		return buff.get(0);	
 	}
-	
 	
 
 }
