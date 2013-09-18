@@ -58,8 +58,8 @@ public class MipMapMesh implements TerrainMesh {
 	public void build(HeightMap heightMap) throws TerrainException {
 		size = heightMap.getWidth();
 		//assert (heightMap.getFormat() == Format.Intensity) || (heightMap.getFormat() == Format.Alpha) : "Invalid pxel format of heightmap";
-		//assert size == heightMap.getHeight() : "Heightmap needs to be square";
-		//assert isPow2(size - 1) : "Heightmap needs to be 2^n+1 pixels in size";
+		assert size == heightMap.getHeight() : "Heightmap needs to be square";
+		assert Utils.isPow2(size - 1) : "Heightmap needs to be 2^n+1 pixels in size";
 				
 		levels = log2(size - 1) - log2(leafSize) + 1;
 		lods = log2(leafSize) + 1;
@@ -144,7 +144,7 @@ public class MipMapMesh implements TerrainMesh {
 		}
 	}
 		
-	public class Node {		
+	class Node {		
 		private int size;		
 		private int x;
 		private int y;

@@ -3,6 +3,7 @@ package com.galfarslair.glterrain.ui;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.Texture;
@@ -16,7 +17,10 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.Align;
+import com.badlogic.gdx.scenes.scene2d.utils.BaseDrawable;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.galfarslair.glterrain.TerrainRunner;
+import com.galfarslair.glterrain.app.InputManager;
 import com.galfarslair.glterrain.util.Assets;
 
 public abstract class UIScreen implements Screen {
@@ -24,6 +28,8 @@ public abstract class UIScreen implements Screen {
 	public interface FinishedNotifier {
 		void onFinished();
 	}
+	
+	protected static InputManager inputManager;
 	
 	protected static Skin skin;
 	public static BitmapFont consoleFont;
@@ -34,8 +40,9 @@ public abstract class UIScreen implements Screen {
 	protected Table root;
 	protected Table controls;
 	
-	public static void initStatic() {
-		skin = new Skin(Assets.getFile("uiSkin.json"));
+	public static void initStatic(InputManager input) {
+		inputManager = input;
+		skin = new UISkin(Assets.getFile("uiSkin.json"));		
 		consoleFont = new BitmapFont(Assets.getFile("Consolas15.fnt"), skin.getRegion("Consolas15"), false);
 		consoleFont.setColor(1f, 1f, 0.8f, 1f);
 		launcherTexture = new Texture(Assets.getFile("Launcher.png"));
@@ -48,7 +55,7 @@ public abstract class UIScreen implements Screen {
 		root.setFillParent(true);		
 		stage.addActor(root);
 				
-		Gdx.input.setInputProcessor(stage);
+		inputManager.setPrimaryProcessor(stage);
 		
 		Label label = new Label("glTerrain Demo", skin);
 		label.setFontScale(2);		
@@ -124,5 +131,21 @@ public abstract class UIScreen implements Screen {
 	@Override
 	public void dispose() {
 	}	
+	
+	static class UISkin extends Skin {
+		public UISkin(FileHandle file) {			
+			super(file);
+		}
+
+		@Override
+		public Drawable getDrawable (String name) {
+			if (name.equalsIgnoreCase("empty")) {
+				// No-op drawable that can be used by skin elements.
+				// No support in GDX to add it directly to skin file.
+				return new BaseDrawable();
+			}			
+			return super.getDrawable(name);		
+		}
+	}
 
 }

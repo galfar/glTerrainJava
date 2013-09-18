@@ -21,6 +21,10 @@ public class Assets {
 		return Gdx.files.internal("data/" + dataPath);
 	}
 	
+	public static FileHandle getClasspathFile(String path) {
+		return Gdx.files.classpath("com/galfarslair/glterrain/" + path);
+	}
+	
 	public static FileHandle getFilePlatform(String dataPath) {
 		String fullPath = null;
 		if (Gdx.app.getType() == ApplicationType.Desktop) {

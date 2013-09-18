@@ -50,7 +50,8 @@ com.badlogic.gdx.scenes.scene2d.ui.CheckBox$CheckBoxStyle: {
 },
 com.badlogic.gdx.scenes.scene2d.ui.List$ListStyle: {
 	default: { fontColorUnselected: default, selection: default-rect-pad, fontColorSelected: default, font: default-font },
-	small: { fontColorUnselected: default, selection: default-rect-pad, fontColorSelected: default, font: small }
+  listing: { fontColorUnselected: default, selection: empty, fontColorSelected: default, font: default-font },
+	small: { fontColorUnselected: default, selection: empty, fontColorSelected: default, font: small }  
 },
 com.badlogic.gdx.scenes.scene2d.ui.Touchpad$TouchpadStyle: {
 	default: { background: default-pane, knob: default-round-large }

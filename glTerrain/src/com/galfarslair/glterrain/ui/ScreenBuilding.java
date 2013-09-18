@@ -22,7 +22,7 @@ public class ScreenBuilding extends UIScreen {
 		controls.add().expandY();
 		controls.row();
 				
-		log = new List(new Object[] { }, skin);		
+		log = new List(new Object[] { }, skin, "listing");		
 		controls.add(log).fillX().height(260);
 		controls.row();
 	}

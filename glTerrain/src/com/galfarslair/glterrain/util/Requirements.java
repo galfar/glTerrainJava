@@ -17,6 +17,10 @@ public class Requirements {
 		this.exts = this.info.getGLExtensions();
 	}
 	
+	public SystemInfo getSystemInfo() {
+		return info;
+	}
+	
 	public boolean wireframeOverlayAvailable() {
 		return exts.contains("GL_OES_standard_derivatives") || info.hasDesktopGpu();
 	}
@@ -28,6 +32,10 @@ public class Requirements {
 	public boolean memoryAvaiable() {
 		return info.getMaxRuntimeMemory() >= REQUIRED_MEMORY_MB * 1024 * 1024; 
 	}
+	
+	public boolean vtfAvaiable() {
+		return info.getMaxVertexTextureImageUnits() > 0; 
+	}	
 	
 	public boolean textureSizeOk() {
 		return info.getMaxTextureSize() >= REQUIRED_TEXTURE_SIZE;

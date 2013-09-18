@@ -1,11 +1,7 @@
 package com.galfarslair.glterrain.mipmap;
 
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.GL11;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
@@ -14,7 +10,6 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.VertexBufferObject;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ObjectMap;
@@ -31,7 +26,6 @@ public class MipMapRenderer implements TerrainRenderer {
 	private MipMapMesh mesh;	
 	private ObjectMap<MipMapMesh.Node, VertexBufferObject> heightBuffers;
 	private ObjectMap<MipMapMesh.Node, VertexBufferObject> skirtHeightBuffers;
-	private ObjectMap<MipMapMesh.Node, Integer> shortBufferHandles;
 	private LeafGrid leafGrid;	
 	private ShaderProgram shader;
 	private ShaderProgram shaderSkirt;
@@ -124,7 +118,7 @@ public class MipMapRenderer implements TerrainRenderer {
 		heightBuffers = new ObjectMap<MipMapMesh.Node, VertexBufferObject>();
 		skirtHeightBuffers = new ObjectMap<MipMapMesh.Node, VertexBufferObject>();
 		
-		shortBufferHandles = new ObjectMap<MipMapMesh.Node, Integer>();
+		new ObjectMap<MipMapMesh.Node, Integer>();
 		
 		mesh.visitQuadTreeLeaves(mesh.getRootNode(), new NodeAction() {
 			@Override

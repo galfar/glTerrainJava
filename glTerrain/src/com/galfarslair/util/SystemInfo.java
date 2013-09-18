@@ -8,6 +8,7 @@ import java.util.Set;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GLCommon;
 import com.badlogic.gdx.utils.BufferUtils;
 
@@ -15,13 +16,11 @@ public class SystemInfo {
 	public enum GLType {
 		OpenGL, GLES
 	}
-
-	private long maxHeapMemory;
+	
 	private int resolutionWidth;
 	private int resolutionHeight;
 		
 	private String glVersionString;
-	private int glMajorVersion;
 	private String glRenderer;
 	private String glVendor;
 	
@@ -66,6 +65,10 @@ public class SystemInfo {
 		return glVendor;
 	}
 	
+	public int getMaxVertexTextureImageUnits() {
+		return maxVertexTextureUnits;
+	}
+	
 	public Set<String> getGLExtensions() {
 		return Collections.unmodifiableSet(glExtensions);
 	}
@@ -94,7 +97,9 @@ public class SystemInfo {
 	    for (String e : exts) {
 	    	glExtensions.add(e);
 	    }		
-		maxTextureSize = getGLInteger(GL10.GL_MAX_TEXTURE_SIZE);
+		
+	    maxTextureSize = getGLInteger(GL10.GL_MAX_TEXTURE_SIZE);
+	    maxVertexTextureUnits = getGLInteger(GL20.GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS);
 	}
 	
 	private int getGLInteger(int pname) {

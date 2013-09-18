@@ -13,8 +13,10 @@ import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.BaseDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
+import com.badlogic.gdx.utils.Array;
 import com.galfarslair.glterrain.TerrainRunner;
 import com.galfarslair.glterrain.util.Requirements;
 import com.galfarslair.util.SystemInfo;
@@ -23,19 +25,23 @@ public class ScreenMainMenu extends UIScreen {
 
 	private TerrainRunner.TerrainStarter terrainStarter;
 	private Requirements requirements;
+	private SystemInfo systemInfo;
+	private Array<String> systemInfoLines = new Array<String>();
 	
-	public ScreenMainMenu(TerrainRunner.TerrainStarter terrainStarter, Requirements requirements) {		
+	public ScreenMainMenu(TerrainRunner.TerrainStarter terrainStarter, SystemInfo systemInfo, Requirements requirements) {		
 		super();		
 		this.terrainStarter = terrainStarter;
 		this.requirements = requirements;
+		this.systemInfo = systemInfo;
+		buildSystemInfo();
 	}
-		
+	
 	protected void defineControls() {
 		final TextButton btnGeoMip = new TextButton("GeoMipMapping", skin, "toggle");		
 		final TextButton btnSoar = new TextButton("SOAR", skin, "toggle");
 		
 		final CheckBox checkWire = new CheckBox("Wireframe overlay", skin);
-		final CheckBox checkAutowalk = new CheckBox("Autowalk (devices w/o HW keys)", skin);
+		final CheckBox checkAutowalk = new CheckBox("Autowalking", skin);
 		
 		final Label labTolerance = new Label("", skin);		
 		final Slider sliderTolerance = new Slider(0.5f, 15.0f, 0.5f, false, skin);		
@@ -87,31 +93,27 @@ public class ScreenMainMenu extends UIScreen {
 			}
 		});
 		
-		TextButton btnGLInfo = new TextButton("Show GL Info", skin);
-		btnGLInfo.addListener(new ChangeListener() {			
+		TextButton btnSysInfo = new TextButton("Show System Info", skin);
+		btnSysInfo.addListener(new ChangeListener() {			
 			public void changed(ChangeEvent event, Actor actor) {
-				SystemInfo si = TerrainRunner.systemInfo;
-				
-				Dialog dlg = new Dialog("GL Info", skin);
-				dlg.setSize(400, 360);				
+				Dialog dlg = new Dialog("System Info", skin);
+				dlg.setSize(500, 400);				
 				
 				String info = 
-				    "Version: " + si.getGLVersionString() + "\n" +   
-				    "Renderer: " + si.getGLRenderer() + "\n" +
-					"Resolution: " + String.format("%dx%d", si.getResolutionWidth(), si.getResolutionHeight()) + "\n" +
-					"Mem Info: " + String.format("%d/%d/%d", si.getJavaHeapMemory() / 1024, si.getNativeHeapMemory() / 1024, si.getMaxRuntimeMemory() / 1024) + "\n" +
-			      	"Extensions: ";				
-				List list =	new List(si.getGLExtensions().toArray(), skin, "small");
+				    "Version: " + systemInfo.getGLVersionString() + "\n" +   
+				    "Renderer: " + systemInfo.getGLRenderer() + "\n" +
+			      	"Details: ";				
+				List list =	new List(systemInfoLines.items, skin, "small");
 				ScrollPane scrollPane = new ScrollPane(list, skin);
 				scrollPane.setScrollingDisabled(true, false);
 				scrollPane.setFadeScrollBars(false);
-												
+				
 				dlg.getContentTable().add(new Label(info, skin, "small")).fillX();
 				dlg.getContentTable().row();
-				dlg.getContentTable().add(scrollPane).height(200).pad(4).fillX();				
+				dlg.getContentTable().add(scrollPane).height(240).pad(4).padTop(0).fillX();				
 				
 				dlg.row();
-				dlg.button("OK");
+				dlg.button("  OK  ");
 				dlg.key(Keys.ENTER, null).key(Keys.ESCAPE, null).key(Keys.BACK, null);
 								
 				dlg.show(stage);
@@ -137,21 +139,20 @@ public class ScreenMainMenu extends UIScreen {
 		group.defaults().space(8).minWidth(160);		
 		group.add(btnGeoMip).left();
 		group.add(btnSoar).right();
-		group.row();
-		
+		group.row();		
 						
 		controls.add(group).left();		
 		controls.row();
-		
-		controls.add(checkWire).left();
-		controls.row();
+				
 		controls.add(labTolerance).left();
 		controls.row();
 		controls.add(sliderTolerance).fillX().height(40);		
 		controls.row();
+		controls.add(checkWire).left();
+		controls.row();
 		controls.add(checkAutowalk).left();
 		controls.row();
-		controls.add(btnGLInfo).right();
+		controls.add(btnSysInfo).right();
 		controls.row();
 		controls.add().expandY();
 		controls.row();
@@ -160,9 +161,16 @@ public class ScreenMainMenu extends UIScreen {
 		controls.row();		
 	}
 	
-	@Override
-	public void render(float delta) {
-		super.render(delta);
+	private void buildSystemInfo() {
+		systemInfoLines.add("Resolution: " + String.format("%dx%d", systemInfo.getResolutionWidth(), systemInfo.getResolutionHeight()));
+		systemInfoLines.add("Mem Info: " + String.format("%d/%d/%d MiB", systemInfo.getJavaHeapMemory() / 1024, systemInfo.getNativeHeapMemory() / 1024, systemInfo.getMaxRuntimeMemory() / 1024));
+		systemInfoLines.add("GPU Vendor: " + systemInfo.getGLVendor());
+		systemInfoLines.add("Max Texture Size: " + systemInfo.getMaxTextureSize());
+		systemInfoLines.add("Max Vertex Textures: " + systemInfo.getMaxVertexTextureImageUnits());
+		
+		systemInfoLines.add("Open GL Extensions:");
+	    systemInfoLines.addAll((String[]) systemInfo.getGLExtensions().toArray(new String[0]));
+	    systemInfoLines.shrink();
 	}
 
 }
