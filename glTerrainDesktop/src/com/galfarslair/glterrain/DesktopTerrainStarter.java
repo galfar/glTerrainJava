@@ -14,12 +14,13 @@ public class DesktopTerrainStarter {
 		cfg.title = "glTerrain";
 		cfg.useGL20 = true;
 		cfg.disableAudio = true;
-				
+		cfg.foregroundFPS = 0;	
+		
 		cfg.r = 8;
 		cfg.g = 8;
 		cfg.b = 8;
 		cfg.depth = 24;
-		cfg.samples = 4;
+		//cfg.samples = 4;
 		cfg.width = 1400;
 		cfg.height = 1000;		
 	    /*cfg.width = 800;

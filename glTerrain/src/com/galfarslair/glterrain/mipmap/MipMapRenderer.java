@@ -13,11 +13,11 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ObjectMap;
+import com.badlogic.gdx.utils.ShortArray;
 import com.galfarslair.glterrain.TerrainMesh;
 import com.galfarslair.glterrain.TerrainRenderer;
 import com.galfarslair.glterrain.mipmap.MipMapMesh.Node;
 import com.galfarslair.glterrain.mipmap.MipMapMesh.NodeAction;
-import com.galfarslair.util.ShortArray;
 import com.galfarslair.util.Utils;
 import com.galfarslair.util.Utils.TerrainException;
 

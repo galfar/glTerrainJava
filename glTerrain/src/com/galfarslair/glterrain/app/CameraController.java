@@ -29,8 +29,8 @@ public class CameraController {
 		camera = new PerspectiveCamera();
 		camera.near = 0.4f;
 		camera.far = 1e04f;		
-		camera.up.set(position);		
-		camera.position.set(up);		
+		camera.up.set(up);		
+		camera.position.set(position);		
 		updateCameraDirection(0, 0);
 		
 		if (input.hasMultitouch()) {

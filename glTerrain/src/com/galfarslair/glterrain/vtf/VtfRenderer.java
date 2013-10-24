@@ -15,16 +15,16 @@ import com.badlogic.gdx.graphics.glutils.IndexBufferObject;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.VertexBufferObject;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.FloatArray;
+import com.badlogic.gdx.utils.ShortArray;
 import com.galfarslair.glterrain.TerrainMesh;
 import com.galfarslair.glterrain.TerrainRenderer;
-import com.galfarslair.glterrain.mipmap.MipMapMesh;
-import com.galfarslair.glterrain.util.Assets;
 import com.galfarslair.util.HeightMap;
-import com.galfarslair.util.ShortArray;
 import com.galfarslair.util.Utils;
 import com.galfarslair.util.Utils.TerrainException;
+
+import static com.galfarslair.util.Utils.sqr;
 
 public class VtfRenderer implements TerrainRenderer {
 
@@ -32,9 +32,12 @@ public class VtfRenderer implements TerrainRenderer {
 	private ShaderProgram shader;
 	
 	private Texture heightTexture;
-	private VertexBufferObject vboGrid;
+	private VertexBufferObject vboGrid;	
 	private IndexBufferObject iboGrid;
+	private VertexBufferObject vboGrid2;
+	private IndexBufferObject iboGrid2;
 	
+	int tileSize;
 	int numVerticesPerLine;
 	int numVertices;
 	int numIndices;
@@ -43,20 +46,31 @@ public class VtfRenderer implements TerrainRenderer {
 		this.shader = shader;
 	}
 	
+	public void setShader(ShaderProgram shader) {
+		this.shader = shader;
+	}
+	
 	@Override
 	public void assignMesh(TerrainMesh mesh) throws TerrainException {
 		assert mesh instanceof VtfMesh;
 		this.mesh = (VtfMesh)mesh;
+		this.tileSize = this.mesh.getTileSize();
 		buildData();
 	}
 
 	@Override
 	public void render(Camera camera) {
-		shader.begin();
-		vboGrid.bind(shader);
-		iboGrid.bind();
-
 		heightTexture.bind(2);
+		
+		Array<VtfMesh.Node> nodes = mesh.getActiveNodes();
+		
+		shader.begin();
+		/*vboGrid.bind(shader);
+		iboGrid.bind();*/
+		
+		vboGrid2.bind(shader);
+		iboGrid2.bind();
+		
 		
 		shader.setUniformMatrix("matProjView", camera.combined);
 		shader.setUniformi("texGround", 0);
@@ -64,30 +78,120 @@ public class VtfRenderer implements TerrainRenderer {
 		shader.setUniformi("texHeight", 2);
 		shader.setUniformf("terrainSize", mesh.getSize());		
 		shader.setUniformf("heightSampleScale", mesh.getSize() * TerrainMesh.HEIGHT_SCALE);
-		shader.setUniformf("nodeSize", mesh.getTileSize());
-				
-		for (VtfMesh.Tile tile : mesh.getTiles()) {
+		shader.setUniformf("tileSize", tileSize);
+							
+		int count = 0;
+		
+		for (VtfMesh.Node node : nodes) {
 			
-			shader.setUniformf("nodePos", tile.x, tile.y);
+			int[] neighborLods = mesh.lookupNeghborLods(node);
+			float[] neighorScalings = new float[] { 1, 1, 1, 1 };
+			for (int i = 0; i < 4; i++) {
+				if (neighborLods[i] < node.level) {
+					neighorScalings[i] = Utils.pow2(node.level - neighborLods[i]);
+				}
+			}
+			
+			shader.setUniformf("nodePos", node.x, node.y);
+			shader.setUniformf("nodeScale", node.size / tileSize);			
+			shader.setUniform4fv("lodScales", neighorScalings, 0, 4);
+			//shader.setUniformf("lodScales", 2, 4, 8, 2);
 			
 			Gdx.gl20.glDrawElements(GL20.GL_TRIANGLES, numIndices, GL20.GL_UNSIGNED_SHORT, 0);
+			//Gdx.gl20.glDrawArrays(GL20.GL_TRIANGLES, 0, numVertices);
+			
+			count++;
+			//break;
+			/*if (count == 4)
+				break;*/
 		}
 		
-		iboGrid.unbind();
-		vboGrid.unbind(shader);
+		/*iboGrid.unbind();
+		vboGrid.unbind(shader);*/
+		vboGrid2.unbind(shader);
+		iboGrid2.unbind();
+				
 		shader.end();
 	}
 	
 	@Override
 	public void dispose() {
 		// TODO Auto-generated method stub
-
+		heightTexture.dispose();
 	}
 	
 	private void buildData() {
+				
 		buildHeighTexture();
-		buildGridVertexData();
-		buildIndexData();		
+		//buildGridVertexData();
+		//buildIndexData();		
+		buildGridVertexData2();
+		buildIndexData2();
+	}
+	
+	private void buildGridVertexData2() {
+		numVertices = sqr(tileSize) * 2 * 3;		
+		vboGrid2 = new VertexBufferObject(true, numVertices, 
+				new VertexAttribute(Usage.Position, 2, "position"),
+				new VertexAttribute(Usage.Generic, 3, "baryAttribs"));
+		
+		FloatArray verts = new FloatArray(numVertices);
+		boolean parity = true;
+		
+		for (int y = 0; y < tileSize; y++) {				
+			for (int x = 0; x < tileSize; x++) {
+				
+				verts.addAll(x, y);				
+				verts.addAll(1, 0, 0);
+								
+				verts.addAll(x, y + 1);				
+				verts.addAll(0, 1, 0);
+				
+				if (parity) {
+					verts.addAll(x + 1, y + 1);
+				} else {
+					verts.addAll(x + 1, y);
+				}						
+				verts.addAll(0, 0, 1);				
+				
+				
+				verts.addAll(x + 1, y);				
+				verts.addAll(1, 0, 0);
+				
+				if (parity) {
+					verts.addAll(x, y);
+				} else {
+					verts.addAll(x, y + 1);
+				}
+				verts.addAll(0, 1, 0);
+								
+				verts.addAll(x + 1, y + 1);
+				verts.addAll(0, 0, 1);
+			
+				
+				if (x < tileSize - 1) {
+					parity = !parity;
+				}
+			}
+		}
+		
+		int vertexElems = 5;
+		assert verts.size == numVertices * vertexElems;
+		vboGrid2.setVertices(verts.items, 0, verts.size);		
+	}
+	
+	private void buildIndexData2() {
+		numIndices = numVertices;	
+		assert numIndices < Short.MAX_VALUE;
+		ShortArray indices = new ShortArray(numIndices);
+	
+		for (short i = 0; i < numIndices; i++) {
+			indices.add(i);
+		}
+		
+		assert indices.size == numIndices;
+		iboGrid2 = new IndexBufferObject(numIndices);
+		iboGrid2.setIndices(indices.toArray(), 0, numIndices);
 	}
 	
 	private void buildGridVertexData() {
@@ -95,60 +199,52 @@ public class VtfRenderer implements TerrainRenderer {
 		numVertices = Utils.sqr(numVerticesPerLine);
 		
 		vboGrid = new VertexBufferObject(true, numVertices, 
-				new VertexAttribute(Usage.Position, 2, "position"),
-				new VertexAttribute(Usage.Generic, 3, "baryAttribs"));			
+				new VertexAttribute(Usage.Position, 2, "position"));			
 		
-		int vertexElems = 5;
+		int vertexElems = 2;
 		FloatArray verts = new FloatArray(); 
-		
-		/* Generate barycentric coordinates for grid triangles for wireframe display in shader.
-		 * Based on http://codeflow.org/entries/2012/aug/02/easy-wireframe-display-with-barycentric-coordinates/
-		 * Distribution of coords across the grid base on drawing stuff on paper, works for all lod levels :) 
-		 */
-		int baryIdx = 0;
-		Vector3[] baryCoords = new Vector3[] {
-				new Vector3(1, 0, 0),
-				new Vector3(0, 1, 0),
-				new Vector3(0, 0, 1)};			
-		
+					
 		for (int y = 0; y < numVerticesPerLine; y++) {				
 			for (int x = 0; x < numVerticesPerLine; x++) {
 				verts.add(x);
 				verts.add(y);
-									
-				Vector3 bary = baryCoords[baryIdx];
-				verts.add(bary.x);
-				verts.add(bary.y);
-				verts.add(bary.z);
-				
-				if ((x < numVerticesPerLine - 1) || (numVerticesPerLine % 3 != 0)) {
-					baryIdx++;
-					if (baryIdx >= 3) {
-						baryIdx = 0;
-					}
-				}
 			}				
 		}
 		
 		assert verts.size == numVertices * vertexElems;
-		vboGrid.setVertices(verts.toArray(), 0, verts.size);
+		vboGrid.setVertices(verts.items, 0, verts.size);
 	}
 	
 	private void buildIndexData() {
 		numIndices = Utils.sqr(numVerticesPerLine - 1) * 6;				
 		ShortArray indices = new ShortArray();
+		boolean parity = false;
 		
 		for (int y = 0; y < numVerticesPerLine - 1; y++) {
 			int startLineIdx = y * numVerticesPerLine;
 			
 			for (int x = 0; x < numVerticesPerLine - 1; x++) {
-				indices.add(startLineIdx + x);
-				indices.add(startLineIdx + numVerticesPerLine + x);
-				indices.add(startLineIdx + x + 1);
+				if (parity) {
+					indices.add(startLineIdx + x);
+					indices.add(startLineIdx + numVerticesPerLine + x);
+					indices.add(startLineIdx + x + 1);
+					
+					indices.add(startLineIdx + x + 1);
+					indices.add(startLineIdx + numVerticesPerLine + x);
+					indices.add(startLineIdx + numVerticesPerLine + x + 1);
+				} else {
+					indices.add(startLineIdx + x);
+					indices.add(startLineIdx + numVerticesPerLine + x);
+					indices.add(startLineIdx + numVerticesPerLine + x + 1);
+					
+					indices.add(startLineIdx + x);
+					indices.add(startLineIdx + numVerticesPerLine + x + 1);
+					indices.add(startLineIdx + x + 1);
+				}
 				
-				indices.add(startLineIdx + x + 1);
-				indices.add(startLineIdx + numVerticesPerLine + x);
-				indices.add(startLineIdx + numVerticesPerLine + x + 1);
+				if (x < numVerticesPerLine - 2) {
+					parity = !parity;
+				}
 			}				
 		}	
 			

@@ -63,10 +63,15 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	public static PlatformSupport platfromSupport;
 		
 	// starting camera props
-	private float cameraYaw = 135;
-	private float cameraPitch = -15;	
-	private final Vector3 cameraPos = new Vector3(0, 0, 60);
+	//private float cameraYaw = 135;
+	//private float cameraPitch = -15;	
+	//private final Vector3 cameraPos = new Vector3(0, 0, 60);
 	private final Vector3 cameraUp = new Vector3(0, 0, 1);
+	
+	private float cameraYaw = 135;
+	private float cameraPitch = -15;
+	private final Vector3 cameraPos = new Vector3(4, -2, 164);
+	
 	
 	private float lodTolerance = 1.5f;
 		
@@ -91,7 +96,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	private ScreenMainMenu screenMainMenu;
 	
 	private boolean benchmarkMode;	
-	private boolean wireOverlay;
+	private boolean wireOverlay = true;
 		
 	private final TerrainRunner instance = this;
 	
@@ -165,16 +170,17 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		
 	    
 	    // DEBUG
-	    /*setScreen(new ScreenBuilding());
+	    setScreen(new ScreenBuilding());
 	    terrainMethod = TerrainMethod.VTF;
 	    state = State.TerrainBuild;
 	    terrainBuilder = new TerrainBuilder();
-	    */
+	    //--
+	    
 	    scratchpad();
 	}
 
 	private void scratchpad() {
-//		platfromSupport.enableWireframe();
+		//platfromSupport.enableWireframe();
 		
 	}
 	
@@ -379,7 +385,12 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 			    	Utils.logInfo(shaderWire.getLog());
 			    	
 			    	terrainMesh = new VtfMesh();
-			    	terrainRenderer = new VtfRenderer(shaderWire);
+			    	terrainRenderer = new VtfRenderer(shader);
+			    	
+			    	if (wireOverlay) {
+						((VtfRenderer)terrainRenderer).setShader(shaderWire);
+					}		
+			    	
 			    	heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF1k.hraw");
 			    	break;
 			    }

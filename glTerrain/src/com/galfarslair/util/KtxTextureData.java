@@ -67,7 +67,7 @@ public class KtxTextureData implements TextureData {
 	}
 	
 	@Override
-	public void consumeCompressedData() {		
+	public void consumeCompressedData(int target) {		
 		int type = file.getHeader().getGLType(); 
 		
 		for (int i = 0; i < mipLevels; i++) {
@@ -78,11 +78,11 @@ public class KtxTextureData implements TextureData {
 			
 			if (format == 0) {
 				// compressed format
-				Gdx.gl.glCompressedTexImage2D(GL10.GL_TEXTURE_2D, i, internalFormat, 
+				Gdx.gl.glCompressedTexImage2D(target, i, internalFormat, 
 						levelWidth, levelHeight, 0, levelSize, data);
 				
 			} else {
-				Gdx.gl.glTexImage2D(GL10.GL_TEXTURE_2D, i, internalFormat, 
+				Gdx.gl.glTexImage2D(target, i, internalFormat, 
 						levelWidth, levelHeight, 0,	format, type, data);				
 			}
 		}
