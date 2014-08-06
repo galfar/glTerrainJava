@@ -67,14 +67,14 @@ public class MipMapMesh implements TerrainMesh {
 		root = new RootNode(size);		
 		
 		long time = System.nanoTime();
-		root.buildTree(heightMap, size, leafSize);
+		root.buildTree(heightMap, size + 1, leafSize);
 		Utils.logElapsed("GeoMipMap mesh built in: ", time);
 		
 		visibleLeaves = new Array<Node>(leafCount);		
 	}
 
 	@Override
-	public void update(PerspectiveCamera camera, float tolerance) {
+	public int update(PerspectiveCamera camera, float tolerance) {
 		final PerspectiveCamera localCamera = camera;
 		final float perspectiveFactor = (float) (camera.viewportHeight / (2 * Math.tan(Math.PI / 4)));
 		final float localTolerance = tolerance;
@@ -87,6 +87,14 @@ public class MipMapMesh implements TerrainMesh {
 				node.determineLod(localCamera.position, perspectiveFactor, localTolerance);					
 			}
 		});
+		
+		int triCount = 0;		
+		for (Node leaf : visibleLeaves) {
+			int stride = Utils.pow2(leaf.currentLod);
+			triCount += Utils.sqr(leafSize / stride) * 2;
+			triCount += leafSize / stride * 4 * 2;
+		}
+		return triCount;
 	}
 
 	@Override

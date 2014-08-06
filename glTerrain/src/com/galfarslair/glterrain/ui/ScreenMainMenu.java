@@ -13,9 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.utils.BaseDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
 import com.badlogic.gdx.utils.Array;
 import com.galfarslair.glterrain.TerrainRunner;
 import com.galfarslair.glterrain.util.Requirements;
@@ -103,7 +101,8 @@ public class ScreenMainMenu extends UIScreen {
 				    "Version: " + systemInfo.getGLVersionString() + "\n" +   
 				    "Renderer: " + systemInfo.getGLRenderer() + "\n" +
 			      	"Details: ";				
-				List list =	new List(systemInfoLines.items, skin, "small");
+				List<String> list =	new List<String>(skin, "small");
+				list.setItems(systemInfoLines);
 				ScrollPane scrollPane = new ScrollPane(list, skin);
 				scrollPane.setScrollingDisabled(true, false);
 				scrollPane.setFadeScrollBars(false);
@@ -127,6 +126,7 @@ public class ScreenMainMenu extends UIScreen {
 			}
 		});
 		
+		@SuppressWarnings("unused")
 		ButtonGroup btnGroupMethod = new ButtonGroup(btnGeoMip, btnSoar);		
 		btnGeoMip.setChecked(true);
 				

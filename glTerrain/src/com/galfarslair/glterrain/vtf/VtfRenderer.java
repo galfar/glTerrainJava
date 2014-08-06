@@ -1,5 +1,7 @@
 package com.galfarslair.glterrain.vtf;
 
+import static com.galfarslair.util.Utils.sqr;
+
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 
@@ -7,49 +9,50 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Pixmap.Format;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.VertexAttribute;
-import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.IndexBufferObject;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.VertexBufferObject;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ShortArray;
 import com.galfarslair.glterrain.TerrainMesh;
-import com.galfarslair.glterrain.TerrainRenderer;
+import com.galfarslair.glterrain.util.BaseTileTerrainRenderer;
 import com.galfarslair.util.HeightMap;
 import com.galfarslair.util.Utils;
 import com.galfarslair.util.Utils.TerrainException;
 
-import static com.galfarslair.util.Utils.sqr;
-
-public class VtfRenderer implements TerrainRenderer {
+public class VtfRenderer extends BaseTileTerrainRenderer {
 
 	private VtfMesh mesh;
-	private ShaderProgram shader;
-	
+			
 	private Texture heightTexture;
 	private VertexBufferObject vboGrid;	
 	private IndexBufferObject iboGrid;
-	private VertexBufferObject vboGrid2;
-	private IndexBufferObject iboGrid2;
-	
+	private VertexBufferObject vboGridWire;
+		
 	int tileSize;
 	int numVerticesPerLine;
 	int numVertices;
 	int numIndices;
+	int numVerticesWire;
+	private boolean wireOverlay;
 	
-	public VtfRenderer(ShaderProgram shader) {
-		this.shader = shader;
+	public VtfRenderer(ShaderProgram shaderDefault, ShaderProgram shaderWire) {
+		super(shaderDefault, shaderWire);		
 	}
 	
-	public void setShader(ShaderProgram shader) {
-		this.shader = shader;
+	@Override
+	public void setWireFrameOverlay(boolean enabled) {
+		super.setWireFrameOverlay(enabled);
+		//shader = shaderDefault;
+		wireOverlay = enabled;
 	}
-	
+		
 	@Override
 	public void assignMesh(TerrainMesh mesh) throws TerrainException {
 		assert mesh instanceof VtfMesh;
@@ -60,17 +63,18 @@ public class VtfRenderer implements TerrainRenderer {
 
 	@Override
 	public void render(Camera camera) {
-		heightTexture.bind(2);
-		
+		heightTexture.bind(2);		
 		Array<VtfMesh.Node> nodes = mesh.getActiveNodes();
 		
-		shader.begin();
-		/*vboGrid.bind(shader);
-		iboGrid.bind();*/
+		//wireOverlay = false;
 		
-		vboGrid2.bind(shader);
-		iboGrid2.bind();
-		
+		shader.begin();		
+		/*if (!wireOverlay) {
+			vboGrid.bind(shader);
+			iboGrid.bind();		  
+		} else*/ {
+			vboGridWire.bind(shader);						
+		}		
 		
 		shader.setUniformMatrix("matProjView", camera.combined);
 		shader.setUniformi("texGround", 0);
@@ -97,8 +101,11 @@ public class VtfRenderer implements TerrainRenderer {
 			shader.setUniform4fv("lodScales", neighorScalings, 0, 4);
 			//shader.setUniformf("lodScales", 2, 4, 8, 2);
 			
-			Gdx.gl20.glDrawElements(GL20.GL_TRIANGLES, numIndices, GL20.GL_UNSIGNED_SHORT, 0);
-			//Gdx.gl20.glDrawArrays(GL20.GL_TRIANGLES, 0, numVertices);
+			/*if (!wireOverlay) {
+				Gdx.gl20.glDrawElements(GL20.GL_TRIANGLES, numIndices, GL20.GL_UNSIGNED_SHORT, 0);
+			} else*/ {
+				Gdx.gl20.glDrawArrays(GL20.GL_TRIANGLES, 0, numVerticesWire);
+			}
 			
 			count++;
 			//break;
@@ -106,36 +113,38 @@ public class VtfRenderer implements TerrainRenderer {
 				break;*/
 		}
 		
-		/*iboGrid.unbind();
-		vboGrid.unbind(shader);*/
-		vboGrid2.unbind(shader);
-		iboGrid2.unbind();
+		/*if (!wireOverlay) {
+			vboGrid.unbind(shader);
+			iboGrid.unbind();		  
+		} else*/ {
+			vboGridWire.unbind(shader);						
+		}
 				
 		shader.end();
 	}
 	
 	@Override
 	public void dispose() {
-		// TODO Auto-generated method stub
+		vboGrid.dispose();
+		iboGrid.dispose();
+		vboGridWire.dispose();
 		heightTexture.dispose();
 	}
 	
-	private void buildData() {
-				
+	private void buildData() {			
 		buildHeighTexture();
-		//buildGridVertexData();
-		//buildIndexData();		
-		buildGridVertexData2();
-		buildIndexData2();
+		buildGridVertexData();
+		buildIndexData();		
+		buildGridWireVertexData();		
 	}
 	
-	private void buildGridVertexData2() {
-		numVertices = sqr(tileSize) * 2 * 3;		
-		vboGrid2 = new VertexBufferObject(true, numVertices, 
+	private void buildGridWireVertexData() {
+		numVerticesWire = sqr(tileSize) * 2 * 3;		
+		vboGridWire = new VertexBufferObject(true, numVerticesWire, 
 				new VertexAttribute(Usage.Position, 2, "position"),
 				new VertexAttribute(Usage.Generic, 3, "baryAttribs"));
 		
-		FloatArray verts = new FloatArray(numVertices);
+		FloatArray verts = new FloatArray(numVerticesWire);
 		boolean parity = true;
 		
 		for (int y = 0; y < tileSize; y++) {				
@@ -176,24 +185,10 @@ public class VtfRenderer implements TerrainRenderer {
 		}
 		
 		int vertexElems = 5;
-		assert verts.size == numVertices * vertexElems;
-		vboGrid2.setVertices(verts.items, 0, verts.size);		
+		assert verts.size == numVerticesWire * vertexElems;
+		vboGridWire.setVertices(verts.items, 0, verts.size);		
 	}
-	
-	private void buildIndexData2() {
-		numIndices = numVertices;	
-		assert numIndices < Short.MAX_VALUE;
-		ShortArray indices = new ShortArray(numIndices);
-	
-		for (short i = 0; i < numIndices; i++) {
-			indices.add(i);
-		}
 		
-		assert indices.size == numIndices;
-		iboGrid2 = new IndexBufferObject(numIndices);
-		iboGrid2.setIndices(indices.toArray(), 0, numIndices);
-	}
-	
 	private void buildGridVertexData() {
 		numVerticesPerLine = mesh.getTileSize() + 1;
 		numVertices = Utils.sqr(numVerticesPerLine);
@@ -257,6 +252,11 @@ public class VtfRenderer implements TerrainRenderer {
 		HeightMap hm = mesh.getHeightMap();
 		ShortBuffer samples = hm.getSamples();
 		
+		// Unfortunately, GL_LUMINANCE + GL_UNSIGNED_SHORT not working in GLES
+		// so we must use 8bit height texture. At least linear filter can be used.
+		// Also just use pow2 sized part of heightmap as texture for 
+		// better compatibility.
+		
 		int width = hm.getWidth();
 		int height = hm.getHeight();
 		
@@ -272,7 +272,7 @@ public class VtfRenderer implements TerrainRenderer {
 				byte pixel = (byte)(sample >> 8);
 				pixels.put(index, pixel);				
 			}
-		}		
+		}	
 		
 		heightTexture = new Texture(pixmap);
 		heightTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);

@@ -2,17 +2,13 @@ package com.galfarslair.glterrain.ui;
 
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
-import com.badlogic.gdx.utils.Array;
-import com.galfarslair.glterrain.TerrainRunner;
 
 public class ScreenBuilding extends UIScreen {
 
-	private List log;
-	private Array<String> lines;
-	
+	private List<String> log;
+		
 	public ScreenBuilding() {
-		super();		
-		lines = new Array<String>();
+		super();
 	}
 
 	@Override
@@ -22,14 +18,13 @@ public class ScreenBuilding extends UIScreen {
 		controls.add().expandY();
 		controls.row();
 				
-		log = new List(new Object[] { }, skin, "listing");		
+		log = new List<String>(skin, "listing");		
 		controls.add(log).fillX().height(260);
 		controls.row();
 	}
 	
 	public void addToLog(String line) {
-		lines.add(line);
-		log.setItems(lines.toArray());
+		log.getItems().add(line);	
 	}
 	
 }

@@ -15,30 +15,25 @@ import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.ShortArray;
 import com.galfarslair.glterrain.TerrainMesh;
-import com.galfarslair.glterrain.TerrainRenderer;
 import com.galfarslair.glterrain.mipmap.MipMapMesh.Node;
 import com.galfarslair.glterrain.mipmap.MipMapMesh.NodeAction;
+import com.galfarslair.glterrain.util.BaseTileTerrainRenderer;
 import com.galfarslair.util.Utils;
 import com.galfarslair.util.Utils.TerrainException;
 
-public class MipMapRenderer implements TerrainRenderer {
+public class MipMapRenderer extends BaseTileTerrainRenderer {
 
 	private MipMapMesh mesh;	
 	private ObjectMap<MipMapMesh.Node, VertexBufferObject> heightBuffers;
 	private ObjectMap<MipMapMesh.Node, VertexBufferObject> skirtHeightBuffers;
 	private LeafGrid leafGrid;	
-	private ShaderProgram shader;
+	
 	private ShaderProgram shaderSkirt;
 	
-	public MipMapRenderer(ShaderProgram shader, ShaderProgram shaderSkirt) {
-		assert shader != null;
-		assert shaderSkirt != null;
-		this.shader = shader;
-		this.shaderSkirt = shaderSkirt;
-	}
-	
-	public void setShader(ShaderProgram shader) {
-		this.shader = shader;
+	public MipMapRenderer(ShaderProgram shaderDefault, ShaderProgram shaderWire, ShaderProgram shaderSkirt) {
+		super(shaderDefault, shaderWire);
+		assert shaderSkirt != null;				
+		this.shaderSkirt = shaderSkirt;		
 	}
 	
 	@Override

@@ -27,6 +27,11 @@ public class SoarRenderer implements TerrainRenderer {
 	}
 	
 	@Override
+	public void setWireFrameOverlay(boolean enabled) {
+		// no wire overlay support
+	}
+	
+	@Override
 	public void assignMesh(TerrainMesh mesh) throws TerrainException {
 		assert mesh instanceof SoarMesh;
 		this.mesh = (SoarMesh)mesh;		

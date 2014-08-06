@@ -105,7 +105,7 @@ public class SoarMesh implements TerrainMesh {
 	}
 	
 	@Override
-	public void update(PerspectiveCamera camera, float tolerance) {
+	public int update(PerspectiveCamera camera, float tolerance) {
 		viewPoint.set(camera.position);
 		clippingPlanes = camera.frustum.planes;	
 		kappa = (tolerance / camera.viewportWidth) * (camera.fieldOfView * MathUtils.degreesToRadians);
@@ -130,7 +130,9 @@ public class SoarMesh implements TerrainMesh {
 		
 		indexer.rootW(halfLevels);
 		subMeshRefineVisible(levels, indexer.triI, indexer.triJ, indexer.triK, mask);
-		triBuilder.stripEnd(indexer.indexSW(halfLevels));		
+		triBuilder.stripEnd(indexer.indexSW(halfLevels));
+		
+		return numTriangles;
 	}
 
 	@Override
@@ -138,7 +140,6 @@ public class SoarMesh implements TerrainMesh {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-
 	
 	private void subMeshRefineVisible(int level, int triI, int triJ, int triK, int mask) {
 		if (mask == SPHERE_VISIBLE) {
@@ -283,8 +284,7 @@ public class SoarMesh implements TerrainMesh {
 		}
 	}
 	
-	private static class Indexer {
-		
+	private static class Indexer {		
 		int triI;
 		int triJ;
 		int triK;

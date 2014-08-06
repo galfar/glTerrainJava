@@ -2,11 +2,6 @@ package com.galfarslair.glterrain.vtf;
 
 import static com.galfarslair.util.Utils.log2;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.swing.text.AbstractDocument.LeafElement;
-
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.collision.BoundingBox;
@@ -56,7 +51,7 @@ public class VtfMesh implements TerrainMesh {
 	}
 
 	@Override
-	public void update(PerspectiveCamera camera, float tolerance) {
+	public int update(PerspectiveCamera camera, float tolerance) {
 		final PerspectiveCamera localCamera = camera;
 		//final float perspectiveFactor = (float) (camera.viewportHeight / (2 * Math.tan(Math.PI / 4)));
 		//final float localTolerance = tolerance;
@@ -69,45 +64,45 @@ public class VtfMesh implements TerrainMesh {
 					return false;
 				}*/
 				
+				if (node.isLeaf) {		
+					// 
+					addActiveNode(node);
+					return false;
+				}
+				
 				Vector2 p = new Vector2(localCamera.position.x, localCamera.position.y);
 				Vector2 c = new Vector2(node.bounds.getCenter().x, node.bounds.getCenter().y);
 				
 				float dist = localCamera.position.dst(node.bounds.getCenter());
-				dist = p.dst(c);
-				//double treshold = Math.pow(5.0, levels - node.level);
-				double treshold = Math.pow(5.0, levels - node.level);
+				dist = p.dst(c);				
+				double treshold = Math.pow(3.0, levels - node.level);
 				
-				if (node.isLeaf) {			
-					activeNodes.add(node);
-					
-					int lsize = node.size / leafSize;
-					for (int y = 0; y < lsize; y++) {
-						for (int x = 0; x < lsize; x++) {
-							lodLookup[node.x / leafSize + x][node.y / leafSize + y] = (byte) node.level;
-						}
-					}				
-					
-					return false;
-				}
+				
 								
 				if (dist < treshold) {
 				//if (node.level < levels) {
 					return true;
-				} else {
-					activeNodes.add(node);
-					
-					// TODO: add to lookup
-					int lsize = node.size / leafSize;
-					for (int y = 0; y < lsize; y++) {
-						for (int x = 0; x < lsize; x++) {
-							lodLookup[node.x / leafSize + x][node.y / leafSize + y] = (byte) node.level;
-						}
-					}					
-					
+				} else {					
+					addActiveNode(node);
 					return false;
 				}				
 			}
 		});
+		
+		int triCount = activeNodes.size * (leafSize * leafSize * 2);
+		return triCount;
+	}
+	
+	private void addActiveNode(Node node) {
+		activeNodes.add(node);
+		
+		 
+		int lsize = node.size / leafSize;
+		for (int y = 0; y < lsize; y++) {
+			for (int x = 0; x < lsize; x++) {
+				lodLookup[node.x / leafSize + x][node.y / leafSize + y] = (byte) node.level;
+			}
+		}					
 	}
 	
 	public interface NodeAction {

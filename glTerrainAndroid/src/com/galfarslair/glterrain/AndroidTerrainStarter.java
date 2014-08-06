@@ -20,11 +20,10 @@ public class AndroidTerrainStarter extends AndroidApplication {
         	apkVersion = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
 		} catch (NameNotFoundException e) {
 		}
-        
+                
         Assert.assertEquals("Android app and core versions don't match", TerrainRunner.VERSION, apkVersion);
         
-        AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
-        cfg.useGL20 = true;
+        AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();        
         cfg.useAccelerometer = false;
         cfg.useCompass = false;        
         cfg.depth = 24;        

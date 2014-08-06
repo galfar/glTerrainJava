@@ -3,7 +3,6 @@ package com.galfarslair.util;
 import java.nio.IntBuffer;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL11;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.GdxRuntimeException;
@@ -73,7 +72,7 @@ public class DynamicIndexBuffer {
 	}
 	
 	public void unbind () {
-		gl.glBindBuffer(GL11.GL_ELEMENT_ARRAY_BUFFER, 0);
+		gl.glBindBuffer(GL20.GL_ELEMENT_ARRAY_BUFFER, 0);
 		isBound = false;
 	}
 	

@@ -7,9 +7,7 @@ import java.util.Set;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Application.ApplicationType;
-import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.GLCommon;
 import com.badlogic.gdx.utils.BufferUtils;
 
 public class SystemInfo {
@@ -82,23 +80,23 @@ public class SystemInfo {
 	}
 	
 	public void gather() {
-		GLCommon gl = Gdx.gl;
+		GL20 gl = Gdx.gl;
 		
 		resolutionWidth = Gdx.graphics.getWidth();
 	    resolutionHeight = Gdx.graphics.getHeight();
 		
-		glVersionString = gl.glGetString(GL10.GL_VERSION);   
-	    glRenderer = gl.glGetString(GL10.GL_RENDERER);
-	    glVendor = gl.glGetString(GL10.GL_VENDOR);
+		glVersionString = gl.glGetString(GL20.GL_VERSION);   
+	    glRenderer = gl.glGetString(GL20.GL_RENDERER);
+	    glVendor = gl.glGetString(GL20.GL_VENDOR);
 	    	    
-	    String extsString = gl.glGetString(GL10.GL_EXTENSIONS);
+	    String extsString = gl.glGetString(GL20.GL_EXTENSIONS);
 	    String[] exts = extsString.split(" ");
 	    glExtensions.clear();
 	    for (String e : exts) {
 	    	glExtensions.add(e);
 	    }		
 		
-	    maxTextureSize = getGLInteger(GL10.GL_MAX_TEXTURE_SIZE);
+	    maxTextureSize = getGLInteger(GL20.GL_MAX_TEXTURE_SIZE);
 	    maxVertexTextureUnits = getGLInteger(GL20.GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS);
 	}
 	

@@ -22,11 +22,11 @@ public class HeightMap {
 	
 	private int width;
 	private int height;
-	private int bitDepth;
-	private short[] data;
+	private int bitDepth;	
 	private ByteBuffer rawSamples;
 	private ShortBuffer samples;
 	
+	@SuppressWarnings("serial")
 	public static class HeightmapException extends TerrainException {
 		public HeightmapException(String message) {
 			super(message);
@@ -36,8 +36,7 @@ public class HeightMap {
 		}
 	}
 	
-	public HeightMap() {
-		
+	public HeightMap() {		
 	}
 	
 	public int getWidth() {
@@ -60,7 +59,10 @@ public class HeightMap {
 	 * @throws HeightmapException 
 	 */
 	public void loadFromRaw(FileHandle file) throws IOException, HeightmapException {
-		int count = (int) (file.length() / 2);
+		bitDepth = 16;
+		
+		int bpp = bitDepth / 8;
+		int count = (int) (file.length() / bpp);
 		int side = (int) Math.sqrt(count);
 		
 		if (side * side != count) {
@@ -73,7 +75,7 @@ public class HeightMap {
 	    long time = System.nanoTime();	    
 	    DataInputStream in = Assets.getFileStream(file);
 	    
-	    rawSamples = BufferUtils.newByteBuffer(width * height * 2);
+	    rawSamples = BufferUtils.newByteBuffer(width * height * bpp);
 	    samples = rawSamples.asShortBuffer();
 	    
 	    byte[] buffer = new byte[1024 * 16];
@@ -87,9 +89,11 @@ public class HeightMap {
 	}
 	
 	public void loadFromPng(FileHandle file) throws HeightmapException {
-		long time = System.nanoTime();
-		
-		/*PngReader reader = new PngReader(file.read(), file.name());
+		// Too slow on Android
+		/*
+		long time = System.nanoTime(); 
+		  
+		PngReader reader = new PngReader(file.read(), file.name());
 		ImageInfo imgInfo = reader.imgInfo;
 		
 		if (!imgInfo.greyscale || imgInfo.alpha) {
@@ -110,9 +114,7 @@ public class HeightMap {
 		
 	    Utils.logElapsed("HM loaded in: ", time);
 	    
-	    buffer = BufferUtils.newByteBuffer(width * height);
-	    
-	    */	
+	    buffer = BufferUtils.newByteBuffer(width * height);*/	
 	}
 	
 	public ShortBuffer getSamples() {

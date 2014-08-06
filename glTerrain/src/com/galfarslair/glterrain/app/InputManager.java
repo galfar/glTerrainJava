@@ -23,7 +23,7 @@ public class InputManager extends InputAdapter {
 			multiplexer.removeProcessor(this.primaryProcessor);
 		}
 		this.primaryProcessor = primaryProcessor;		
-		multiplexer.addProcessor(this.primaryProcessor);		
+		multiplexer.addProcessor(0, this.primaryProcessor);		
 	}
 	
 	public void addSupportProcessor(InputProcessor supportProcessor) {

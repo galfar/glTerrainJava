@@ -10,17 +10,20 @@ import com.galfarslair.glterrain.util.PlatformSupport;
 public class DesktopTerrainStarter {
 		
 	public static void main(String[] args) {
+		LwjglApplicationConfiguration.disableAudio = true;
 		LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
 		cfg.title = "glTerrain";
-		cfg.useGL20 = true;
-		cfg.disableAudio = true;
 		cfg.foregroundFPS = 0;	
 		
 		cfg.r = 8;
 		cfg.g = 8;
 		cfg.b = 8;
 		cfg.depth = 24;
+		
 		//cfg.samples = 4;
+		cfg.vSyncEnabled = false;		
+		cfg.fullscreen = false;
+		
 		cfg.width = 1400;
 		cfg.height = 1000;		
 	    /*cfg.width = 800;
@@ -44,8 +47,7 @@ public class DesktopTerrainStarter {
 
 		@Override
 		public void updateDisplay() {
-			Display.update();
-			
+			Display.update();			
 		}		
 	}
 

@@ -1,8 +1,6 @@
 package com.galfarslair.glterrain;
 
 import android.app.Application;
-import android.content.pm.PackageManager.NameNotFoundException;
-
 import org.acra.*;
 import org.acra.annotation.*;
 

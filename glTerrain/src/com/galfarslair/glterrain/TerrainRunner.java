@@ -1,20 +1,16 @@
 package com.galfarslair.glterrain;
 
 import java.io.IOException;
-
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.Input.Peripheral;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.FPSLogger;
-import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
@@ -22,11 +18,7 @@ import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Button;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.galfarslair.glterrain.app.CameraController;
 import com.galfarslair.glterrain.app.InputManager;
 import com.galfarslair.glterrain.mipmap.MipMapMesh;
@@ -49,7 +41,7 @@ import com.galfarslair.util.Utils.TerrainException;
 
 public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	
-	public static final String VERSION = "0.32";
+	public static final String VERSION = "0.34";
 	
 	public enum TerrainMethod {
 		GeoMipMapping, BruteForce, SOAR, VTF
@@ -60,8 +52,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	}
 		
 	private final Color skyColor = new Color(0.5f, 0.625f, 0.75f, 1.0f);	
-	public static PlatformSupport platfromSupport;
-		
+			
 	// starting camera props
 	//private float cameraYaw = 135;
 	//private float cameraPitch = -15;	
@@ -75,7 +66,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	
 	private float lodTolerance = 1.5f;
 		
-	private TerrainMethod terrainMethod = /*TerrainMethod.SOAR;//*/TerrainMethod.GeoMipMapping;
+	private TerrainMethod terrainMethod = TerrainMethod.GeoMipMapping;
 	private TerrainMesh terrainMesh;
 	private TerrainRenderer terrainRenderer;
 	private FileHandle heightMapFile;
@@ -100,13 +91,11 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		
 	private final TerrainRunner instance = this;
 	
-	ShaderProgram mipmapShader;
-	ShaderProgram mipmapShaderWire;
-	
 	private TerrainBuilder terrainBuilder;
 	private InputManager input;
 	private CameraController camController;
 		
+	public PlatformSupport platfromSupport;
 	public static SystemInfo systemInfo = new SystemInfo();
 	public static Requirements requirements = new Requirements(systemInfo);
 		
@@ -135,17 +124,16 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		fpsLogger = new FPSLogger();		
 		font = UIScreen.consoleFont;		
 		batch = new SpriteBatch();
-						
-		Gdx.gl.glDisable(GL10.GL_LIGHTING);
-		Gdx.gl.glDisable(GL10.GL_BLEND);
-	    Gdx.gl.glEnable(GL10.GL_CULL_FACE);
-		Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
-		Gdx.gl.glEnable(GL10.GL_TEXTURE_2D);
 		
-		Gdx.gl.glFrontFace(GL10.GL_CW);
-		Gdx.gl.glCullFace(GL10.GL_BACK);		
-		Gdx.gl.glDepthFunc(GL10.GL_LEQUAL);
-		Gdx.gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+		Gdx.gl.glDisable(GL20.GL_BLEND);
+	    Gdx.gl.glEnable(GL20.GL_CULL_FACE);
+		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+		Gdx.gl.glEnable(GL20.GL_TEXTURE_2D);
+		
+		Gdx.gl.glFrontFace(GL20.GL_CW);
+		Gdx.gl.glCullFace(GL20.GL_BACK);		
+		Gdx.gl.glDepthFunc(GL20.GL_LEQUAL);
+		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 			    
 	    screenMainMenu = new ScreenMainMenu(new TerrainStarter() {
 			@Override
@@ -170,10 +158,10 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		
 	    
 	    // DEBUG
-	    setScreen(new ScreenBuilding());
+	    /*setScreen(new ScreenBuilding());
 	    terrainMethod = TerrainMethod.VTF;
 	    state = State.TerrainBuild;
-	    terrainBuilder = new TerrainBuilder();
+	    terrainBuilder = new TerrainBuilder();*/
 	    //--
 	    
 	    scratchpad();
@@ -220,15 +208,15 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		
 		Gdx.gl.glClearColor(skyColor.r, skyColor.g, skyColor.b, 1);
 		Gdx.gl.glClearDepthf(1.0f);
-		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 		
 		groundTexture.bind(0);
 		detailTexture.bind(1);
 		
-		terrainMesh.update(camera, lodTolerance);
+		int triCount = terrainMesh.update(camera, lodTolerance);
 		terrainRenderer.render(camera);		
 		
-		Gdx.gl.glActiveTexture(GL10.GL_TEXTURE0); // Needs to be done for sprites & fonts to work (they bind to current tex unit)
+		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0); // Needs to be done for sprites & fonts to work (they bind to current tex unit)
 				
 		batch.begin();		
 		batch.enableBlending();
@@ -237,7 +225,8 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 				"FPS: " + Gdx.graphics.getFramesPerSecond() + "\n" + 
 				String.format("CamPos: %.1f %.1f %.1f\n", camera.position.x, camera.position.y, camera.position.z) + 
 				String.format("CamDir: %.2f %.2f\n", cameraYaw, cameraPitch) + 
-				String.format("Tolerance: %.1fpx", lodTolerance);
+				String.format("Tolerance: %.1fpx\n", lodTolerance) + 
+				String.format("Triangles: %,d", triCount);
 		
 		font.drawMultiLine(batch, statsString, 5, Gdx.graphics.getHeight());
 		font.draw(batch, methodName, Gdx.graphics.getWidth() - font.getBounds(methodName).width, Gdx.graphics.getHeight());
@@ -281,14 +270,8 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	public boolean keyDown (int keycode) {
 		switch (keycode) {
 		case Keys.O:
-			if (terrainMethod != TerrainMethod.SOAR) {
-				wireOverlay = !wireOverlay;
-				if (wireOverlay) {
-					((MipMapRenderer)terrainRenderer).setShader(mipmapShaderWire);
-				} else {
-					((MipMapRenderer)terrainRenderer).setShader(mipmapShader);
-				}
-			}
+			wireOverlay = !wireOverlay;
+			terrainRenderer.setWireFrameOverlay(wireOverlay);			
 			return true;
 		case Keys.PLUS:
 			lodTolerance = Math.min(lodTolerance + 0.5f, 15f);
@@ -326,6 +309,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		@Override
 		protected void processState() {
 			String vert, frag;
+			ShaderProgram shader, shaderWire;
 			
 			timer = System.nanoTime();	
 			
@@ -339,24 +323,20 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 			    	
 			    	vert = Assets.getClasspathFile("shaders/geo.vert").readString();
 			    	frag = Assets.getClasspathFile("shaders/geo.frag").readString();
-			    	mipmapShader = new ShaderProgram(vert, frag);
-			    	Utils.logInfo(mipmapShader.getLog());
+			    	shader = new ShaderProgram(vert, frag);
+			    	Utils.logInfo(shader.getLog());
 			    	
 			    	vert = "#define DRAW_EDGES\r\n" + vert;
 			    	frag = "#define DRAW_EDGES\r\n" + frag;
-			    	mipmapShaderWire = new ShaderProgram(vert, frag);
-			    	Utils.logInfo(mipmapShaderWire.getLog());
+			    	shaderWire = new ShaderProgram(vert, frag);
+			    	Utils.logInfo(shaderWire.getLog());
 			    		    	
 					ShaderProgram shaderSkirt = new ShaderProgram(
 							Assets.getClasspathFile("shaders/geoSkirt.vert"),
 							Assets.getClasspathFile("shaders/geoSkirt.frag"));		
 					Utils.logInfo(shaderSkirt.getLog());
 			    	
-			    	terrainRenderer = new MipMapRenderer(mipmapShader, shaderSkirt);
-			    	
-			    	if (wireOverlay) {
-						((MipMapRenderer)terrainRenderer).setShader(mipmapShaderWire);
-					}					
+			    	terrainRenderer = new MipMapRenderer(shader, shaderWire, shaderSkirt);
 			    	
 			    	heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF1k.hraw");	    	
 			    	break;
@@ -376,26 +356,22 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 			    	
 			    	vert = Assets.getClasspathFile("shaders/vtf.vert").readString();
 			    	frag = Assets.getClasspathFile("shaders/vtf.frag").readString();
-			    	ShaderProgram shader = new ShaderProgram(vert, frag);
+			    	shader = new ShaderProgram(vert, frag);
 			    	Utils.logInfo(shader.getLog());
 			    	
 			    	vert = "#define DRAW_EDGES\r\n" + vert;
 			    	frag = "#define DRAW_EDGES\r\n" + frag;
-			    	ShaderProgram shaderWire = new ShaderProgram(vert, frag);
+			    	shaderWire = new ShaderProgram(vert, frag);
 			    	Utils.logInfo(shaderWire.getLog());
 			    	
 			    	terrainMesh = new VtfMesh();
-			    	terrainRenderer = new VtfRenderer(shader);
-			    	
-			    	if (wireOverlay) {
-						((VtfRenderer)terrainRenderer).setShader(shaderWire);
-					}		
+			    	terrainRenderer = new VtfRenderer(shader, shaderWire);
 			    	
 			    	heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF1k.hraw");
 			    	break;
 			    }
 			    
-			    //heightMapFile = Assets.getFile("terrains/NewVolcanoes-HF8k.hraw");
+			    //heightMapFile = Assets.getFilePlatform("terrains/NewVolcanoes-HF8k.hraw");
 			    screen.addToLog(Utils.formatElapsed("Preparation:", timer));
 				return;
 				
@@ -459,6 +435,9 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 						
 			case Finished:
 				state = State.TerrainRun;
+				
+				terrainRenderer.setWireFrameOverlay(wireOverlay);
+				
 			    setScreen(null);
 			    capturedMouse = true;
 				Gdx.input.setCursorCatched(capturedMouse);				

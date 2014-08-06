@@ -8,7 +8,7 @@ import java.util.Set;
 import nl.weeaboo.jktx.KTXFile;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.TextureData;
@@ -31,7 +31,7 @@ public class KtxTextureData implements TextureData {
 	
 	@Override
 	public TextureDataType getType() {		
-		return TextureDataType.Compressed;
+		return TextureDataType.Custom;
 	}
 	
 	@Override
@@ -67,7 +67,7 @@ public class KtxTextureData implements TextureData {
 	}
 	
 	@Override
-	public void consumeCompressedData(int target) {		
+	public void consumeCustomData(int target) {		
 		int type = file.getHeader().getGLType(); 
 		
 		for (int i = 0; i < mipLevels; i++) {
@@ -159,10 +159,10 @@ public class KtxTextureData implements TextureData {
 		static {
 			compressedFormats = new HashSet<Integer>();
 			IntBuffer buff = BufferUtils.newIntBuffer(16);			
-			Gdx.gl.glGetIntegerv(GL10.GL_NUM_COMPRESSED_TEXTURE_FORMATS, buff);
+			Gdx.gl.glGetIntegerv(GL20.GL_NUM_COMPRESSED_TEXTURE_FORMATS, buff);
 			int count = buff.get(0);			
 			buff = BufferUtils.newIntBuffer(Math.max(count, 16));
-			Gdx.gl.glGetIntegerv(GL10.GL_COMPRESSED_TEXTURE_FORMATS, buff);
+			Gdx.gl.glGetIntegerv(GL20.GL_COMPRESSED_TEXTURE_FORMATS, buff);
 			for (int i = 0; i < count; i++) {
 				compressedFormats.add(buff.get());
 			}
