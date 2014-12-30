@@ -8,6 +8,7 @@ import org.acra.annotation.*;
         formKey = "",
         reportType = org.acra.sender.HttpSender.Type.JSON,
         httpMethod = org.acra.sender.HttpSender.Method.PUT,
+        // view reports at https://galfar.cloudant.com/acralyzer/_design/acralyzer/index.html
         formUri = "https://galfar.cloudant.com/acra-glterraindemo/_design/acra-storage/_update/report",
         formUriBasicAuthLogin = "lfbutypseredgmartomplect",
         formUriBasicAuthPassword = "vPnruPgXRUnc38oNDwdVblWf",
