@@ -59,4 +59,8 @@ public final class Utils {
 		} catch (InterruptedException e) {
 		}
 	}
+	
+	public static float calcPhysicalSizeInCm(int pixelSize) {
+		return pixelSize / Gdx.graphics.getPpcX();
+	}
 }

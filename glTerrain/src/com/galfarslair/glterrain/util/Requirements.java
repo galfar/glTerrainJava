@@ -1,7 +1,6 @@
 package com.galfarslair.glterrain.util;
 
-import java.util.Set;
-
+import com.badlogic.gdx.utils.ObjectSet;
 import com.galfarslair.util.SystemInfo;
 
 public class Requirements {
@@ -10,7 +9,7 @@ public class Requirements {
 	public static final int REQUIRED_TEXTURE_SIZE = 2048;
 	
 	private SystemInfo info;
-	private Set<String> exts;
+	private ObjectSet<String> exts;
 	
 	public Requirements(SystemInfo info) {
 		this.info = info;

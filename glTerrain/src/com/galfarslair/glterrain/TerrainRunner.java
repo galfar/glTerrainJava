@@ -125,6 +125,12 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		font = UIScreen.consoleFont;		
 		batch = new SpriteBatch();
 		
+		// Font needs to be scaled up on small devices with high dpi displays		
+		float lineHeightCm = Utils.calcPhysicalSizeInCm((int)font.getLineHeight());
+		if (lineHeightCm < 0.25f) {
+			font.setScale(0.25f / lineHeightCm);
+		}
+		
 		Gdx.gl.glDisable(GL20.GL_BLEND);
 	    Gdx.gl.glEnable(GL20.GL_CULL_FACE);
 		Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
@@ -168,8 +174,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	}
 
 	private void scratchpad() {
-		//platfromSupport.enableWireframe();
-		
+		//platfromSupport.enableWireframe();		
 	}
 	
 	public void setScreen(UIScreen screen) {
@@ -227,7 +232,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 				String.format("CamDir: %.2f %.2f\n", cameraYaw, cameraPitch) + 
 				String.format("Tolerance: %.1fpx\n", lodTolerance) + 
 				String.format("Triangles: %,d", triCount);
-		
+				
 		font.drawMultiLine(batch, statsString, 5, Gdx.graphics.getHeight());
 		font.draw(batch, methodName, Gdx.graphics.getWidth() - font.getBounds(methodName).width, Gdx.graphics.getHeight());
 		batch.end();

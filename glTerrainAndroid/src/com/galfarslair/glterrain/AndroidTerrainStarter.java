@@ -22,18 +22,23 @@ public class AndroidTerrainStarter extends AndroidApplication {
 		}
                 
         Assert.assertEquals("Android app and core versions don't match", TerrainRunner.VERSION, apkVersion);
-        
+                
         AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();        
         cfg.useAccelerometer = false;
-        cfg.useCompass = false;        
-        cfg.depth = 24;        
+        cfg.useCompass = false;
+        cfg.disableAudio = true;
                 
+        cfg.r = 8;
+		cfg.g = 8;
+		cfg.b = 8;
+		cfg.depth = 24;
+		        		
         initialize(new TerrainRunner(new AndroidPlatformSupport()), cfg);
     }
     
     private static class AndroidPlatformSupport implements PlatformSupport {
 		@Override
-		public void enableWireframe() {
+		public void enableWireframe() {			
 		}
 		@Override
 		public void updateDisplay() {

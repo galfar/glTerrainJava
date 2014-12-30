@@ -58,8 +58,8 @@ public class CameraController {
 	
 	public void update(float deltaTime, boolean capturedMouse) {
 		final float mouseLookSensitivity = 0.1f;
-		final float walkSpeed = 4f;		
-		final float superMove = 1 / 20f;
+		final float walkSpeed = 5f;		
+		final float superMove = 1 / 25f;
 		
 		int dx = Gdx.input.getDeltaX();
 		int dy = Gdx.input.getDeltaY();
@@ -95,10 +95,13 @@ public class CameraController {
 			if (touchInputAdapter.leftPointer >= 0) {
 				float pos = touchInputAdapter.leftTouchPos.y;
 				int height = Gdx.graphics.getHeight();
+				float posPercentage = pos / height;
 				
-				if (pos > height * 0.75) {
+				if (posPercentage > 0.85) {
+					moveSpeed = -walkSpeed * (speedFactor * superMove); 
+				} else if (posPercentage > 0.70) {
 					moveSpeed = -walkSpeed;
-				} else if (pos > height * 0.25) {
+				} else if (posPercentage > 0.30) {
 					moveSpeed = walkSpeed;
 				} else {
 					moveSpeed = walkSpeed * (speedFactor * superMove);

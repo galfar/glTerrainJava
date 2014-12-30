@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-    <classpathentry kind="src" path="src"/>
-    <classpathentry kind="src" path="gen"/>
-    <classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
-    <classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
-    <classpathentry combineaccessrules="false" exported="true" kind="src" path="/glTerrain"/>
-    <classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
-    <classpathentry kind="output" path="bin/classes"/>
-    <classpathentry kind="lib" path="libs/acra-4.4.0.jar"/>
-    <classpathentry exported="true" kind="lib" path="libs/gdx-backend-android.jar" sourcepath="D:/Library/Java/libgdx/sources/gdx-backend-android-sources.jar"/>
-    <classpathentry exported="true" kind="lib" path="/glTerrain/libs/gdx.jar" sourcepath="/glTerrain/libs/gdx-sources.jar"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
+	<classpathentry exported="true" kind="lib" path="libs/gdx-backend-android.jar" sourcepath="D:/Library/Java/libgdx/sources/gdx-backend-android-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="/glTerrain/libs/gdx.jar" sourcepath="/glTerrain/libs/gdx-sources.jar"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/glTerrain"/>
+	<classpathentry kind="lib" path="libs/acra-4.5.0.jar" sourcepath="libs/acra-4.5.0-sources.jar"/>
+	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

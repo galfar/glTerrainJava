@@ -17,10 +17,12 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.Align;
 import com.badlogic.gdx.scenes.scene2d.utils.BaseDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.galfarslair.glterrain.TerrainRunner;
 import com.galfarslair.glterrain.app.InputManager;
 import com.galfarslair.glterrain.util.Assets;
+import com.galfarslair.util.Utils;
 
 public abstract class UIScreen implements Screen {
 
@@ -31,28 +33,41 @@ public abstract class UIScreen implements Screen {
 	protected static InputManager inputManager;
 	
 	protected static Skin skin;
+	
 	public static BitmapFont consoleFont;
 	public static Texture launcherTexture;
 	public static TextureRegion launcherRegion;
+	
+	public static final int UI_WIDTH_PX = 800;
+	public static final int UI_HEIGHT_PX = 480;
+	public static final int UI_WIDTH_TRESHOLD_CM = 8;	
 	
 	protected Stage stage;
 	protected Table root;
 	protected Table controls;
 	
+	private ScreenViewport screenViewport;
+	private FitViewport fitViewport;
+	private float uiWidthInCm;
+	
 	public static void initStatic(InputManager input) {
 		inputManager = input;
 		skin = new UISkin(Assets.getFile("uiSkin.json"));		
-		consoleFont = new BitmapFont(Assets.getFile("Consolas15.fnt"), skin.getRegion("Consolas15"), false);
+		consoleFont = new BitmapFont(Assets.getFile("Consolas20.fnt"));
 		consoleFont.setColor(1f, 1f, 0.8f, 1f);
 		launcherTexture = new Texture(Assets.getFile("Launcher.png"));
 		launcherRegion = new TextureRegion(launcherTexture);
 	}
 	
 	public UIScreen() {
-		stage = new Stage(new ScreenViewport());
+		fitViewport = new FitViewport(UI_WIDTH_PX, UI_HEIGHT_PX);
+		screenViewport = new ScreenViewport();
+		uiWidthInCm = Utils.calcPhysicalSizeInCm(UI_WIDTH_PX);
+				
+		stage = new Stage(screenViewport);		
 		root = new Table();
 		root.setFillParent(true);		
-		stage.addActor(root);
+		stage.addActor(root);		
 				
 		inputManager.setPrimaryProcessor(stage);
 		
@@ -60,9 +75,6 @@ public abstract class UIScreen implements Screen {
 		label.setFontScale(2);		
 		
 		controls = new Table();
-		
-		root.debug();
-		controls.debug();
 		
 		controls.add(label).fillX();
 		controls.row();
@@ -77,6 +89,10 @@ public abstract class UIScreen implements Screen {
 		
 		root.add(new Label("v" + TerrainRunner.VERSION, skin, "small")).colspan(2).right();
 		root.pack();
+		
+		stage.setDebugUnderMouse(!true);
+		stage.setDebugParentUnderMouse(!true);
+		stage.setDebugTableUnderMouse(!true);
 	}
 	
 	protected abstract void defineControls();
@@ -102,12 +118,22 @@ public abstract class UIScreen implements Screen {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		stage.act(delta);
-		stage.draw();
-		//Table.drawDebug(stage);
+		stage.draw();		
 	}
 
 	@Override
 	public void resize(int width, int height) {
+		float displayWidthInCm = Utils.calcPhysicalSizeInCm(width);
+		if ((uiWidthInCm < UI_WIDTH_TRESHOLD_CM) || (displayWidthInCm < uiWidthInCm)) {
+			// Fit UI to display size if:
+			// - UI is smaller than 8 cm
+			// - display is smaller than UI size in cm 
+			// Even better would be: fix the size to 8cm if display is 8+cm, or if smaller fit ui to display
+			stage.setViewport(fitViewport);
+		} else {
+			stage.setViewport(screenViewport);
+		}
+		
 		stage.getViewport().update(width, height, true);
 	}
 

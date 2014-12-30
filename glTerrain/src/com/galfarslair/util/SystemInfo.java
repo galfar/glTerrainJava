@@ -1,34 +1,33 @@
 package com.galfarslair.util;
 
 import java.nio.IntBuffer;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.utils.BufferUtils;
+import com.badlogic.gdx.utils.OrderedSet;
 
 public class SystemInfo {
 	public enum GLType {
 		OpenGL, GLES
 	}
 	
-	private int resolutionWidth;
-	private int resolutionHeight;
+	private int displayWidthPx;
+	private int displayHeightPx;
+	private float displayWidthCm;
+	private float displayHeightCm;
 		
 	private String glVersionString;
 	private String glRenderer;
 	private String glVendor;
 	
-	private Set<String> glExtensions;
+	private OrderedSet<String> glExtensions;
 	
 	private int maxTextureSize;
 	private int maxVertexTextureUnits;
-	
+		
 	public SystemInfo() {
-		glExtensions = new HashSet<String>();
+		glExtensions = new OrderedSet<String>(100);
 	}
 	
 	public long getJavaHeapMemory() {
@@ -43,12 +42,20 @@ public class SystemInfo {
 		return Runtime.getRuntime().maxMemory();
 	}
 	
-	public int getResolutionWidth() {
-		return resolutionWidth;
+	public int getDisplayWidthPx() {
+		return displayWidthPx;
 	}
 	
-	public int getResolutionHeight() {
-		return resolutionHeight;
+	public int getDisplayHeightPx() {
+		return displayHeightPx;
+	}
+	
+	public float getDisplayWidthCm() {		
+		return displayWidthCm;
+	}
+
+	public float getDisplayHeightCm() {		
+		return displayHeightCm;
 	}
 	
 	public String getGLVersionString() {
@@ -67,8 +74,8 @@ public class SystemInfo {
 		return maxVertexTextureUnits;
 	}
 	
-	public Set<String> getGLExtensions() {
-		return Collections.unmodifiableSet(glExtensions);
+	public OrderedSet<String> getGLExtensions() {
+		return glExtensions;
 	}
 	
 	public int getMaxTextureSize() {
@@ -80,11 +87,13 @@ public class SystemInfo {
 	}
 	
 	public void gather() {
-		GL20 gl = Gdx.gl;
+		GL20 gl = Gdx.gl20;
 		
-		resolutionWidth = Gdx.graphics.getWidth();
-	    resolutionHeight = Gdx.graphics.getHeight();
-		
+		displayWidthPx = Gdx.graphics.getWidth();
+	    displayHeightPx = Gdx.graphics.getHeight();
+	    displayWidthCm = displayWidthPx / Gdx.graphics.getPpcX();
+		displayHeightCm = displayHeightPx / Gdx.graphics.getPpcY();
+	    
 		glVersionString = gl.glGetString(GL20.GL_VERSION);   
 	    glRenderer = gl.glGetString(GL20.GL_RENDERER);
 	    glVendor = gl.glGetString(GL20.GL_VENDOR);
@@ -105,6 +114,5 @@ public class SystemInfo {
 		Gdx.gl.glGetIntegerv(pname, buff);
 		return buff.get(0);	
 	}
-	
 
 }

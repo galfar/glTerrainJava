@@ -50,13 +50,13 @@ public class ScreenMainMenu extends UIScreen {
 			}
 		});
 		
-		if (Gdx.app.getType() == ApplicationType.Android) {
-			checkAutowalk.setChecked(true);
+		if (Gdx.app.getType() == ApplicationType.Android) {			
 			sliderTolerance.setValue(4.0f);
 		}
 		labTolerance.setText(String.format("LOD tolerance in pixels: %.1f", sliderTolerance.getValue()));
 		
 		TextButton btnStart = new TextButton("Start!", skin);
+				
 		btnStart.addListener(new ChangeListener() {			
 			public void changed(ChangeEvent event, Actor actor) {
 				TerrainRunner.TerrainMethod method = TerrainRunner.TerrainMethod.GeoMipMapping;
@@ -91,7 +91,7 @@ public class ScreenMainMenu extends UIScreen {
 			}
 		});
 		
-		TextButton btnSysInfo = new TextButton("Show System Info", skin);
+		TextButton btnSysInfo = new TextButton("System Info", skin);
 		btnSysInfo.addListener(new ChangeListener() {			
 			public void changed(ChangeEvent event, Actor actor) {
 				Dialog dlg = new Dialog("System Info", skin);
@@ -126,6 +126,11 @@ public class ScreenMainMenu extends UIScreen {
 			}
 		});
 		
+		TextButton btnControls = new TextButton("Controls", skin);
+		
+		
+		
+		
 		@SuppressWarnings("unused")
 		ButtonGroup btnGroupMethod = new ButtonGroup(btnGeoMip, btnSoar);		
 		btnGeoMip.setChecked(true);
@@ -133,9 +138,7 @@ public class ScreenMainMenu extends UIScreen {
 		controls.add().expandY();
 		controls.row();
 		
-		Table group = new Table();		
-		group.debug();
-		
+		Table group = new Table();
 		group.defaults().space(8).minWidth(160);		
 		group.add(btnGeoMip).left();
 		group.add(btnSoar).right();
@@ -152,8 +155,15 @@ public class ScreenMainMenu extends UIScreen {
 		controls.row();
 		controls.add(checkAutowalk).left();
 		controls.row();
-		controls.add(btnSysInfo).right();
+		
+		Table group2 = new Table();
+		group2.defaults().space(8).minWidth(160);		
+		group2.add(btnControls).left();
+		group2.add(btnSysInfo).right();
+		group2.row();	
+		controls.add(group2).left().padTop(8);		
 		controls.row();
+						
 		controls.add().expandY();
 		controls.row();
 								
@@ -162,14 +172,21 @@ public class ScreenMainMenu extends UIScreen {
 	}
 	
 	private void buildSystemInfo() {
-		systemInfoLines.add("Resolution: " + String.format("%dx%d", systemInfo.getResolutionWidth(), systemInfo.getResolutionHeight()));
+		systemInfoLines.add("Display Resolution: " + String.format("%dx%d px", systemInfo.getDisplayWidthPx(), systemInfo.getDisplayHeightPx()));
+		systemInfoLines.add("Display Size: " + String.format("%.2fx%.2f cm", systemInfo.getDisplayWidthCm(), systemInfo.getDisplayHeightCm()));
 		systemInfoLines.add("Mem Info: " + String.format("%d/%d/%d MiB", systemInfo.getJavaHeapMemory() / 1024, systemInfo.getNativeHeapMemory() / 1024, systemInfo.getMaxRuntimeMemory() / 1024));
 		systemInfoLines.add("GPU Vendor: " + systemInfo.getGLVendor());
 		systemInfoLines.add("Max Texture Size: " + systemInfo.getMaxTextureSize());
 		systemInfoLines.add("Max Vertex Textures: " + systemInfo.getMaxVertexTextureImageUnits());
 		
+		systemInfoLines.add("");
 		systemInfoLines.add("Open GL Extensions:");
-	    systemInfoLines.addAll((String[]) systemInfo.getGLExtensions().toArray(new String[0]));
+	    systemInfoLines.addAll(systemInfo.getGLExtensions().orderedItems());
+	    
+	    systemInfoLines.add("");
+	    systemInfoLines.add("Misc Info:");
+	    systemInfoLines.add("Pixels per cm: " + String.format("%.2fx%.2f", Gdx.graphics.getPpcX(), Gdx.graphics.getPpcY()));
+	    
 	    systemInfoLines.shrink();
 	}
 

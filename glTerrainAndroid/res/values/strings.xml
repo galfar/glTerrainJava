@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">glTerrainAndroid</string>
+    
+    <string name="crashToastText">Application has crashed, sorry. Generating crash report&#8230;</string>
+    <string name="crashDialogText">An unexpected error occurred forcing the
+    application to stop. Please help us fix this by sending us error data,
+    all you have to do is click OK.</string>
+    <string name="crashDialogCommentPrompt">Your comment:</string>
+    <string name="crashDialogOkToast">Crash report was sent, thank you!</string>
+    
 </resources>
