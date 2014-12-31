@@ -26,11 +26,11 @@ import com.galfarslair.util.Utils;
 
 public abstract class UIScreen implements Screen {
 
-	public interface FinishedNotifier {
-		void onFinished();
+	public interface ScreenSetter {
+		void setScreen(Screen screen);
 	}
 	
-	protected static InputManager inputManager;
+	public static InputManager inputManager;
 	
 	protected static Skin skin;
 	
@@ -68,31 +68,36 @@ public abstract class UIScreen implements Screen {
 		root = new Table();
 		root.setFillParent(true);		
 		stage.addActor(root);		
-				
-		inputManager.setPrimaryProcessor(stage);
 		
 		Label label = new Label("glTerrain Demo", skin);
-		label.setFontScale(2);		
+		label.setFontScale(1.5f);		
 		
-		controls = new Table();
-		
-		controls.add(label).fillX();
+		controls = new Table();				
+		controls.add(label).expandX().left();
 		controls.row();
 				
 		defineControls();
 		
 		controls.pack();
 		
-		root.add(new Image(launcherRegion));
-		root.add(controls).pad(-8, 8, 0, 0).minWidth(420).fillY();
+		root.add(new Image(launcherRegion)).width(220).left();
+		root.add(controls).pad(-8, 8, 0, 0).width(450).fillY().right();
 		root.row();
 		
 		root.add(new Label("v" + TerrainRunner.VERSION, skin, "small")).colspan(2).right();
 		root.pack();
 		
-		stage.setDebugUnderMouse(!true);
-		stage.setDebugParentUnderMouse(!true);
-		stage.setDebugTableUnderMouse(!true);
+		stage.setDebugUnderMouse(false);
+		stage.setDebugParentUnderMouse(false);
+		stage.setDebugTableUnderMouse(false);
+		/*stage.setDebugUnderMouse(true);
+		stage.setDebugParentUnderMouse(true);
+		stage.setDebugTableUnderMouse(true);*/
+	}
+	
+	@Override
+	public void show() {
+		inputManager.setPrimaryProcessor(stage);
 	}
 	
 	protected abstract void defineControls();
@@ -135,10 +140,6 @@ public abstract class UIScreen implements Screen {
 		}
 		
 		stage.getViewport().update(width, height, true);
-	}
-
-	@Override
-	public void show() {
 	}
 	
 	@Override

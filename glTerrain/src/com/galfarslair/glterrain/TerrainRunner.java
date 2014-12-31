@@ -1,12 +1,14 @@
 package com.galfarslair.glterrain;
 
 import java.io.IOException;
+
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.FPSLogger;
@@ -39,7 +41,7 @@ import com.galfarslair.util.SystemInfo;
 import com.galfarslair.util.Utils;
 import com.galfarslair.util.Utils.TerrainException;
 
-public class TerrainRunner extends InputAdapter implements ApplicationListener {
+public class TerrainRunner extends InputAdapter implements ApplicationListener, UIScreen.ScreenSetter {
 	
 	public static final String VERSION = "0.34";
 	
@@ -61,8 +63,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	
 	private float cameraYaw = 135;
 	private float cameraPitch = -15;
-	private final Vector3 cameraPos = new Vector3(4, -2, 164);
-	
+	private final Vector3 cameraPos = new Vector3(4, -2, 164);	
 	
 	private float lodTolerance = 1.5f;
 		
@@ -83,7 +84,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 	
 	private State state;	
 	
-	private UIScreen currentScreen;
+	private Screen currentScreen;
 	private ScreenMainMenu screenMainMenu;
 	
 	private boolean benchmarkMode;	
@@ -154,21 +155,11 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 				terrainBuilder = new TerrainBuilder();
 				state = State.TerrainBuild;
 			}
-		}, systemInfo, requirements);
+		}, this, systemInfo, requirements);
 	    
 	    
 	    state = State.MainMenu;
 	    setScreen(screenMainMenu);
-	    
-	    
-		
-	    
-	    // DEBUG
-	    /*setScreen(new ScreenBuilding());
-	    terrainMethod = TerrainMethod.VTF;
-	    state = State.TerrainBuild;
-	    terrainBuilder = new TerrainBuilder();*/
-	    //--
 	    
 	    scratchpad();
 	}
@@ -177,7 +168,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener {
 		//platfromSupport.enableWireframe();		
 	}
 	
-	public void setScreen(UIScreen screen) {
+	public void setScreen(Screen screen) {
 		if (currentScreen != null) {
 			currentScreen.hide();
 		}

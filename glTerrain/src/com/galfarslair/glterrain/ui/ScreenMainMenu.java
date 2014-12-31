@@ -14,29 +14,37 @@ import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
 import com.badlogic.gdx.utils.Array;
 import com.galfarslair.glterrain.TerrainRunner;
 import com.galfarslair.glterrain.util.Requirements;
+import com.galfarslair.util.Message;
 import com.galfarslair.util.SystemInfo;
 
 public class ScreenMainMenu extends UIScreen {
 
 	private TerrainRunner.TerrainStarter terrainStarter;
+	private UIScreen.ScreenSetter screenSetter;
 	private Requirements requirements;
 	private SystemInfo systemInfo;
 	private Array<String> systemInfoLines = new Array<String>();
 	
-	public ScreenMainMenu(TerrainRunner.TerrainStarter terrainStarter, SystemInfo systemInfo, Requirements requirements) {		
+	public ScreenMainMenu(TerrainRunner.TerrainStarter terrainStarter, UIScreen.ScreenSetter screenSetter,			
+			SystemInfo systemInfo, Requirements requirements) {		
 		super();		
 		this.terrainStarter = terrainStarter;
+		this.screenSetter = screenSetter;
 		this.requirements = requirements;
 		this.systemInfo = systemInfo;
 		buildSystemInfo();
 	}
 	
 	protected void defineControls() {
+		final ScreenMainMenu mainMenu = this;
+		
 		final TextButton btnGeoMip = new TextButton("GeoMipMapping", skin, "toggle");		
 		final TextButton btnSoar = new TextButton("SOAR", skin, "toggle");
+		final TextButton btnVtf = new TextButton("VTF Test", skin, "toggle");
 		
 		final CheckBox checkWire = new CheckBox("Wireframe overlay", skin);
 		final CheckBox checkAutowalk = new CheckBox("Autowalking", skin);
@@ -60,16 +68,24 @@ public class ScreenMainMenu extends UIScreen {
 		btnStart.addListener(new ChangeListener() {			
 			public void changed(ChangeEvent event, Actor actor) {
 				TerrainRunner.TerrainMethod method = TerrainRunner.TerrainMethod.GeoMipMapping;
-				if (btnSoar.isChecked()) {
+				if (btnVtf.isChecked()) {
+					method = TerrainRunner.TerrainMethod.VTF;
+				} else if (btnSoar.isChecked()) {
 					method = TerrainRunner.TerrainMethod.SOAR; 
-				}
+				} 
 				
 				if ((method == TerrainRunner.TerrainMethod.SOAR) && !requirements.soarAvailable()) {					
 					showMessageDlg("Sorry, your GPU does not support all the features needed for running SOAR terrain rendering method.");
 					return;
 				}
 				
-				if ((method == TerrainRunner.TerrainMethod.GeoMipMapping) && checkWire.isChecked() && !requirements.wireframeOverlayAvailable()) {					
+				if ((method == TerrainRunner.TerrainMethod.VTF) && !requirements.vtfAvaiable()) {					
+					showMessageDlg("Sorry, your GPU does not support all the features needed for running VTF terrain rendering method.");
+					return;
+				}
+				
+				if ((method == TerrainRunner.TerrainMethod.GeoMipMapping || method == TerrainRunner.TerrainMethod.VTF) && 
+						checkWire.isChecked() && !requirements.wireframeOverlayAvailable()) {					
 					showMessageDlg("Sorry, your GPU does not support all the features needed for wireframe overlay.");
 					return;
 				}
@@ -126,23 +142,36 @@ public class ScreenMainMenu extends UIScreen {
 			}
 		});
 		
-		TextButton btnControls = new TextButton("Controls", skin);
-		
-		
-		
+		TextButton btnControls = new TextButton("Controls Overview", skin);
+		btnControls.addListener(new ChangeListener() {			
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				ScreenImageViewer viewer = new ScreenImageViewer("Screen-Touch-Controls.jpg", new Message() {					
+					@Override
+					public void send() {						
+						screenSetter.setScreen(mainMenu);
+					}
+				});
+				screenSetter.setScreen(viewer);
+			}
+		});
+				
 		
 		@SuppressWarnings("unused")
-		ButtonGroup btnGroupMethod = new ButtonGroup(btnGeoMip, btnSoar);		
+		ButtonGroup btnGroupMethod = new ButtonGroup(btnGeoMip, btnSoar, btnVtf);		
 		btnGeoMip.setChecked(true);
 				
 		controls.add().expandY();
 		controls.row();
 		
 		Table group = new Table();
-		group.defaults().space(8).minWidth(160);		
-		group.add(btnGeoMip).left();
-		group.add(btnSoar).right();
+		group.defaults().spaceRight(8).minWidth(220);
+		group.add(new Label("Terrain method:", skin));
+		group.add(btnGeoMip).right();				
 		group.row();		
+		group.add(btnSoar).left();
+		group.add(btnVtf).right();
+		group.row();
 						
 		controls.add(group).left();		
 		controls.row();
@@ -157,7 +186,7 @@ public class ScreenMainMenu extends UIScreen {
 		controls.row();
 		
 		Table group2 = new Table();
-		group2.defaults().space(8).minWidth(160);		
+		group2.defaults().space(8).minWidth(220);		
 		group2.add(btnControls).left();
 		group2.add(btnSysInfo).right();
 		group2.row();	

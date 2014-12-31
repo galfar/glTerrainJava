@@ -20,8 +20,7 @@ public class CameraController {
 	private InputManager input;
 	private TouchInputAdapter touchInputAdapter;
 	
-	public CameraController(InputManager input, 
-			Vector3 position, Vector3 up, float yaw, float pitch) {
+	public CameraController(InputManager input, Vector3 position, Vector3 up, float yaw, float pitch) {
 		this.input = input;	
 		this.yaw = yaw;
 		this.pitch = pitch;		
@@ -58,12 +57,23 @@ public class CameraController {
 	
 	public void update(float deltaTime, boolean capturedMouse) {
 		final float mouseLookSensitivity = 0.1f;
-		final float walkSpeed = 5f;		
-		final float superMove = 1 / 25f;
+		final float walkSpeed = 7.5f;		
+		final float superMove = 1 / 40f;
 		
-		int dx = Gdx.input.getDeltaX();
-		int dy = Gdx.input.getDeltaY();
+		int dx = 0;
+		int dy = 0;
 		
+		if (input.hasMultitouch()) {
+			int pointerIdx = touchInputAdapter.getLookAroundPointerIdx();
+			if (pointerIdx >= 0) {
+				dx = Gdx.input.getDeltaX(pointerIdx);
+				dy = Gdx.input.getDeltaY(pointerIdx);
+			}
+		} else {
+			dx = Gdx.input.getDeltaX();
+			dy = Gdx.input.getDeltaY();			
+		}
+				
 		if (capturedMouse && ((dx != 0) || (dy != 0))) {
 			updateCameraDirection(dx * mouseLookSensitivity, -dy * mouseLookSensitivity);
 		}		
@@ -101,7 +111,7 @@ public class CameraController {
 					moveSpeed = -walkSpeed * (speedFactor * superMove); 
 				} else if (posPercentage > 0.70) {
 					moveSpeed = -walkSpeed;
-				} else if (posPercentage > 0.30) {
+				} else if (posPercentage > 0.35) {
 					moveSpeed = walkSpeed;
 				} else {
 					moveSpeed = walkSpeed * (speedFactor * superMove);
@@ -135,7 +145,7 @@ public class CameraController {
 		int rightPointer = -1;
 		final Vector2 leftTouchPos = new Vector2();
 		
-		public boolean touchDown (int screenX, int screenY, int pointer, int button) {			
+		public boolean touchDown(int screenX, int screenY, int pointer, int button) {			
 			if (screenX < (Gdx.graphics.getWidth() * LEFT_PART_PERCENTAGE)) {
 				leftPointer = pointer;
 				leftTouchPos.set(screenX, screenY);
@@ -144,8 +154,16 @@ public class CameraController {
 			}						
 			return true;
 		}
+		
+		public boolean touchDragged(int screenX, int screenY, int pointer) {			 
+			if (pointer == leftPointer) {
+				// We can change movement speed with keeping the finger on the display 
+				leftTouchPos.set(screenX, screenY);
+			}
+			return true;
+		}
 
-		public boolean touchUp (int screenX, int screenY, int pointer, int button) {			
+		public boolean touchUp(int screenX, int screenY, int pointer, int button) {			
 			if (pointer == leftPointer) {
 				leftPointer = -1;
 			}
@@ -153,7 +171,15 @@ public class CameraController {
 				rightPointer = -1;
 			}					
 			return true;
-		}		
+		}
+		
+        public int getLookAroundPointerIdx() {
+        	// Only look around with right touch point
+        	if (rightPointer >= 0) {
+        		return rightPointer;
+        	} 
+			return -1;
+		}
 	}
 
 }

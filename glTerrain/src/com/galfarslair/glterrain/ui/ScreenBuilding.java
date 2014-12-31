@@ -13,7 +13,7 @@ public class ScreenBuilding extends UIScreen {
 
 	@Override
 	protected void defineControls() {		
-		controls.add(new Label("Building terrain...", skin)).pad(20, 0, 16, 0);
+		controls.add(new Label("Building terrain...", skin)).pad(20, 0, 16, 0).left();		
 		controls.row();
 		controls.add().expandY();
 		controls.row();

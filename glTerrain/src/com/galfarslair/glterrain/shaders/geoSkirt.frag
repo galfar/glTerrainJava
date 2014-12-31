@@ -1,4 +1,6 @@
-precision mediump float;
+#ifdef GL_ES
+    precision mediump float;
+#endif    
 
 uniform float nodeSize;
 uniform sampler2D texGround;
