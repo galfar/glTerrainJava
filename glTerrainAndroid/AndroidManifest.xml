@@ -4,7 +4,7 @@
     android:versionCode="5"
     android:versionName="0.34" >
 
-    <uses-sdk android:minSdkVersion="9" android:targetSdkVersion="19" />
+    <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="19" />
     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
         
     <uses-permission android:name="android.permission.INTERNET"></uses-permission>
@@ -34,11 +34,17 @@
             </intent-filter>
         </activity>
         
-        <activity 
-            android:name="org.acra.CrashReportDialog"                        
-            android:launchMode="singleInstance"
-            android:excludeFromRecents="true"
-            android:finishOnTaskLaunch="true" />
+        <activity
+             android:excludeFromRecents="true" 
+             android:finishOnTaskLaunch="true" 
+             android:launchMode="singleInstance" 
+             android:name="org.acra.dialog.CrashReportDialog" 
+             android:process=":acra" />
+
+        <service 
+            android:exported="false"
+             android:name="org.acra.sender.SenderService" 
+             android:process=":acra"/>
     </application>
 
 </manifest>

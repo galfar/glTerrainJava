@@ -1,5 +1,8 @@
 syntax:glob
 
+.metadata/*
+.recommenders/*
+
 Dist/*
 Doc/*
 
@@ -15,3 +18,5 @@ glTerrainAndroid/gen/*
 assets/*
 glTerrainAndroid/assets/*
 glTerrainDesktop/data*
+
+

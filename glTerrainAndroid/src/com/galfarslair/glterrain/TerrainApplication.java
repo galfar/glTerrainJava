@@ -5,13 +5,12 @@ import org.acra.*;
 import org.acra.annotation.*;
 
 @ReportsCrashes(
-        formKey = "",
-        reportType = org.acra.sender.HttpSender.Type.JSON,
-        httpMethod = org.acra.sender.HttpSender.Method.PUT,
-        // view reports at https://galfar.cloudant.com/acralyzer/_design/acralyzer/index.html
-        formUri = "https://galfar.cloudant.com/acra-glterraindemo/_design/acra-storage/_update/report",
-        formUriBasicAuthLogin = "lfbutypseredgmartomplect",
-        formUriBasicAuthPassword = "vPnruPgXRUnc38oNDwdVblWf",
+		mailTo = "marekmauder@gmail.com",
+		customReportContent = { ReportField.APP_VERSION_CODE, ReportField.APP_VERSION_NAME,
+				ReportField.TOTAL_MEM_SIZE, ReportField.AVAILABLE_MEM_SIZE, ReportField.BRAND, 
+		        ReportField.ANDROID_VERSION, ReportField.PHONE_MODEL, ReportField.CUSTOM_DATA,
+		        ReportField.DISPLAY, ReportField.APPLICATION_LOG, ReportField.DEVICE_FEATURES,
+		        ReportField.STACK_TRACE, ReportField.LOGCAT },           
         mode = ReportingInteractionMode.DIALOG,
         resToastText = R.string.crashToastText,
         resDialogText = R.string.crashDialogText,

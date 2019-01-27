@@ -26,8 +26,6 @@ public class DesktopTerrainStarter {
 		
 		cfg.width = 1400;
 		cfg.height = 1000;		
-	    /*cfg.width = 800;
-		cfg.height = 480;*/		
 		
 		new LwjglApplication(new TerrainRunner(new DesktopPlatformSupport()), cfg);
 	}
