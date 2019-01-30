@@ -155,7 +155,7 @@ public class TerrainRunner extends InputAdapter implements ApplicationListener, 
 				terrainBuilder = new TerrainBuilder();
 				state = State.TerrainBuild;
 			}
-		}, this, systemInfo, requirements);
+		}, this, systemInfo, requirements, input.hasMultitouch());
 	    
 	    
 	    state = State.MainMenu;

@@ -14,7 +14,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
 import com.badlogic.gdx.utils.Array;
 import com.galfarslair.glterrain.TerrainRunner;
 import com.galfarslair.glterrain.util.Requirements;
@@ -28,14 +27,30 @@ public class ScreenMainMenu extends UIScreen {
 	private Requirements requirements;
 	private SystemInfo systemInfo;
 	private Array<String> systemInfoLines = new Array<String>();
+	private boolean hasMultitouch;
 	
-	public ScreenMainMenu(TerrainRunner.TerrainStarter terrainStarter, UIScreen.ScreenSetter screenSetter,			
-			SystemInfo systemInfo, Requirements requirements) {		
+	private static final String[] controlsInfo = new String[] {
+		"MOUSE      looking around", 
+		"UP, W      go forward",
+		"DOWN, S    go backward",
+		"hold CTRL  super fast movement",
+		"O          toggle wireframe",
+		"+/-        increase/decrease pixel tolerance",
+		"L          toggle mouse lock",
+		"ESCAPE      quit program"		
+	}; 
+	
+	public ScreenMainMenu(TerrainRunner.TerrainStarter terrainStarter,
+			UIScreen.ScreenSetter screenSetter,			
+			SystemInfo systemInfo, 
+			Requirements requirements,
+			boolean hasMultitouch) {		
 		super();		
 		this.terrainStarter = terrainStarter;
 		this.screenSetter = screenSetter;
 		this.requirements = requirements;
 		this.systemInfo = systemInfo;
+		this.hasMultitouch = hasMultitouch;
 		buildSystemInfo();
 	}
 	
@@ -47,7 +62,7 @@ public class ScreenMainMenu extends UIScreen {
 		final TextButton btnVtf = new TextButton("VTF Test", skin, "toggle");
 		
 		final CheckBox checkWire = new CheckBox("Wireframe overlay", skin);
-		final CheckBox checkAutowalk = new CheckBox("Autowalking", skin);
+		final CheckBox checkAutowalk = new CheckBox("Auto fly forward", skin);
 		
 		final Label labTolerance = new Label("", skin);		
 		final Slider sliderTolerance = new Slider(0.5f, 15.0f, 0.5f, false, skin);		
@@ -111,7 +126,7 @@ public class ScreenMainMenu extends UIScreen {
 		btnSysInfo.addListener(new ChangeListener() {			
 			public void changed(ChangeEvent event, Actor actor) {
 				Dialog dlg = new Dialog("System Info", skin);
-				dlg.setSize(500, 400);				
+				dlg.setSize(600, 400);				
 				
 				String info = 
 				    "Version: " + systemInfo.getGLVersionString() + "\n" +   
@@ -125,7 +140,7 @@ public class ScreenMainMenu extends UIScreen {
 				
 				dlg.getContentTable().add(new Label(info, skin, "small")).fillX();
 				dlg.getContentTable().row();
-				dlg.getContentTable().add(scrollPane).height(240).pad(4).padTop(0).fillX();				
+				dlg.getContentTable().add(scrollPane).height(240).pad(4).fillX();				
 				
 				dlg.row();
 				dlg.button("  OK  ");
@@ -142,23 +157,47 @@ public class ScreenMainMenu extends UIScreen {
 			}
 		});
 		
+		btnVtf.addListener(new ChangeListener() {
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				labTolerance.setVisible(!btnVtf.isChecked());
+				sliderTolerance.setVisible(!btnVtf.isChecked());
+			}
+		});
+		
 		TextButton btnControls = new TextButton("Controls Overview", skin);
 		btnControls.addListener(new ChangeListener() {			
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
-				ScreenImageViewer viewer = new ScreenImageViewer("Screen-Touch-Controls.jpg", new Message() {					
-					@Override
-					public void send() {						
-						screenSetter.setScreen(mainMenu);
-					}
-				});
-				screenSetter.setScreen(viewer);
+				if (hasMultitouch) {				
+					ScreenImageViewer viewer = new ScreenImageViewer("Screen-Touch-Controls.jpg", new Message() {					
+						@Override
+						public void send() {						
+							screenSetter.setScreen(mainMenu);
+						}
+					});
+					screenSetter.setScreen(viewer);
+				} else {
+					Dialog dlg = new Dialog("Desktop Controls", skin);
+					dlg.setSize(500, 400);				
+					
+					List<String> list =	new List<String>(skin, "small");
+					list.setItems(controlsInfo);					
+															
+					dlg.getContentTable().add(list).height(220).pad(4).padTop(8).fillX();				
+					
+					dlg.row();
+					dlg.button("  OK  ");
+					dlg.key(Keys.ENTER, null).key(Keys.ESCAPE, null).key(Keys.BACK, null);
+									
+					dlg.show(stage);
+				}
 			}
 		});
 				
 		
 		@SuppressWarnings("unused")
-		ButtonGroup btnGroupMethod = new ButtonGroup(btnGeoMip, btnSoar, btnVtf);		
+		ButtonGroup<TextButton> btnGroupMethod = new ButtonGroup<TextButton>(btnGeoMip, btnSoar, btnVtf);		
 		btnGeoMip.setChecked(true);
 				
 		controls.add().expandY();
